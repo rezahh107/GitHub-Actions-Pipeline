@@ -1,0 +1,34 @@
+project_type: python-package
+detection_signals:
+- signal: pyproject.toml, setup.cfg, or setup.py at repository root
+- signal: Python package directory with __init__.py or src/ layout
+- signal: tests/ directory, pytest/unittest files, or JSON Schema fixtures
+risk_patterns:
+- id: version-drift
+  description: Package runtime version or __version__ value diverges from pyproject.toml metadata.
+  typical_trigger: Release version is bumped in one file but not in the package module or VERSION file.
+  detectability: easy
+  suggested_gate: Deterministic test parses pyproject.toml with tomllib and imports or reads the package
+    version source to assert the values agree.
+- id: regex-version-parsing
+  description: Version validation relies on brittle regex extraction even though tomllib can parse pyproject.toml
+    deterministically.
+  typical_trigger: Package metadata layout changes, comments move, or quoted strings are reformatted.
+  detectability: medium
+  suggested_gate: Unit test exercises version loading through tomllib and rejects regex-only parsing of
+    pyproject.toml metadata.
+- id: missing-negative-fixtures
+  description: Invalid input fixtures are accepted because only happy-path examples are tested.
+  typical_trigger: Schema or parser is loosened and no intentionally invalid fixture proves rejection behavior.
+  detectability: medium
+  suggested_gate: Test suite includes negative fixtures and asserts the validator raises or exits non-zero
+    for each invalid case.
+- id: schema-validity-regression
+  description: Schema files or JSON examples drift and stop validating against the declared contract.
+  typical_trigger: Schema required fields change without updating examples, or examples gain unrecognized
+    fields.
+  detectability: easy
+  suggested_gate: Unit test checks every *.schema.json with Draft7Validator.check_schema and validates
+    committed examples against their schemas.
+notes: Use this pattern for distributable Python libraries or CLI packages, not every repository that
+  merely contains Python scripts.
