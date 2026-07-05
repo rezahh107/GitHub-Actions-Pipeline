@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define which CI gates are worth adding and which are intentionally rejected.
+Define which CI gates are worth adding, which are rejected, and which are deferred pending evidence.
 
 The CI Gate Map is produced before implementation.
 
@@ -19,21 +19,56 @@ Before recommending a gate, answer:
 7. Could it be noisy or flaky?
 8. Does it actually enforce something, or only document it?
 
-If the answer is unclear, reject the gate or mark it low priority.
+If the answer is unclear, reject the gate or defer it with named missing evidence.
 
-## Risk Scoring
+## Gate Outcomes
 
-Score each candidate gate with:
+### Proposed
 
-- evidence count;
-- likelihood;
-- impact;
-- estimated added seconds;
-- maintenance cost;
-- noise risk;
-- priority.
+A proposed gate is supported by current evidence and is ready for owner approval.
 
-Priority values: critical, high, medium, low, reject.
+### Rejected
+
+A rejected gate is not meaningful for the current repository evidence. Rejected gates do not use `priority: reject` inside the proposed-gate collection.
+
+### Deferred
+
+A deferred gate may become meaningful later. It must include:
+
+- stable gate ID;
+- reason for deferral;
+- required missing evidence;
+- an explicit reconsideration condition;
+- a Persian owner explanation.
+
+## Risk Assessment
+
+Each proposed gate includes:
+
+```text
+evidence_count
+likelihood: low|medium|high
+impact: low|medium|high
+estimated_added_seconds
+maintenance_cost: low|medium|high
+noise_risk: low|medium|high
+priority: critical|high|medium|low
+```
+
+These fields remain structured judgments. Do not collapse them into a numeric score until a versioned formula contract exists.
+
+## Execution Contract
+
+Each proposed gate also defines:
+
+- workflow events;
+- minimum required permissions;
+- runner when known;
+- timeout when known;
+- command or tool;
+- files expected to change.
+
+Do not guess unknown execution values. Use `null` where the schema permits it or defer the gate when correctness depends on missing information.
 
 ## Reject Conditions
 

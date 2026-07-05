@@ -1,41 +1,109 @@
 {
-  "report_version": "0.1",
-  "generated_at": "2026-07-05T00:00:00Z",
-  "repository": "rezahh107/example-contract-repo",
-  "default_branch": "main",
+  "canonicalization_version": "1",
   "connector_scope": {
+    "artifacts": "unknown",
     "files": "available",
     "pull_requests": "available",
-    "workflow_runs": "unknown",
-    "artifacts": "unknown",
-    "related_repositories": "not_applicable"
+    "related_repositories": "unknown",
+    "workflow_runs": "unknown"
   },
-  "inventory": {
-    "languages": ["Python", "JSON", "Markdown"],
-    "package_files": ["pyproject.toml"],
-    "lockfiles": [],
-    "test_files": ["tests/test_schema.py"],
-    "schema_files": ["schemas/review.schema.json"],
-    "validator_files": ["scripts/validate_repository.py"],
-    "version_files": ["CURRENT_VERSION"],
-    "docs": ["README.md", "AGENTS.md"]
+  "cross_repo_evidence": [],
+  "default_branch": "main",
+  "evidence_completeness": {
+    "cross_repo": {
+      "reason": "Sibling-repository connector scope was not supplied.",
+      "status": "unknown"
+    },
+    "git_history": {
+      "available_commit_count": 12,
+      "hotspot_commit_limit": 200,
+      "is_shallow": false,
+      "reason": "The clone is not shallow and all available commits fit within the configured history limits.",
+      "signal_match_limit": 25,
+      "signal_search_truncated": false,
+      "status": "complete"
+    },
+    "persian_search": {
+      "reason": "Persian search covered all available local commit messages.",
+      "status": "complete"
+    },
+    "static_inventory": {
+      "reason": "Inventory uses deterministic filename and suffix heuristics.",
+      "status": "bounded"
+    },
+    "workflow_telemetry": {
+      "reason": "The local collector does not call GitHub workflow APIs.",
+      "status": "unavailable"
+    }
   },
-  "workflows": [".github/workflows/validate.yml"],
-  "workflow_runs": [],
+  "evidence_sha256": "c837093d1c82bb23575af1f811cb9533305b5abbddb209baf659f6be6e9a9b4c",
+  "generated_at": "2026-07-05T00:00:00Z",
   "historical_signals": [
-    {"source": "commit", "summary": "fixed schema validation regression"}
+    {
+      "commit_sha": "1111111111111111111111111111111111111111",
+      "source": "git_log",
+      "summary": "fix schema validation regression"
+    }
+  ],
+  "hotspots": [
+    {
+      "change_count": 5,
+      "path": "schemas/review.schema.json"
+    }
+  ],
+  "inventory": {
+    "docs": [
+      "AGENTS.md",
+      "README.md"
+    ],
+    "file_count": 14,
+    "languages": [
+      "JSON",
+      "Markdown",
+      "Python"
+    ],
+    "lockfiles": [],
+    "package_files": [
+      "pyproject.toml"
+    ],
+    "schema_files": [
+      "schemas/review.schema.json"
+    ],
+    "test_files": [
+      "tests/test_schema.py"
+    ],
+    "validator_files": [
+      "scripts/validate_repository.py"
+    ],
+    "version_files": [
+      "VERSION"
+    ]
+  },
+  "limitations": [
+    {
+      "code": "WORKFLOW_TELEMETRY_NOT_COLLECTED",
+      "message": "The local collector does not call GitHub APIs for workflow telemetry."
+    },
+    {
+      "code": "CROSS_REPO_SCOPE_UNKNOWN",
+      "message": "The local collector cannot determine sibling-repository access."
+    }
   ],
   "persian_historical_signals": [],
-  "hotspots": [
-    {"path": "schemas/review.schema.json", "reason": "schema controls accepted packages"}
-  ],
-  "cross_repo_evidence": [],
-  "limitations": ["workflow run telemetry was not available in this example"],
-  "evidence_completeness": {
-    "static_inventory": "complete",
-    "git_history": "partial",
-    "workflow_telemetry": "unavailable",
-    "cross_repo": "not_applicable",
-    "persian_search": "unknown"
-  }
+  "report_version": "0.1.1",
+  "repository": "rezahh107/example-contract-repo",
+  "run_context": {
+    "base_sha": "2222222222222222222222222222222222222222",
+    "event_name": "pull_request",
+    "ref": "refs/pull/7/merge",
+    "run_attempt": 1,
+    "run_id": 123456789,
+    "source_head_sha": "3333333333333333333333333333333333333333",
+    "tested_ref_kind": "pull_request_merge",
+    "tested_sha": "4444444444444444444444444444444444444444"
+  },
+  "workflow_runs": [],
+  "workflows": [
+    ".github/workflows/validate.yml"
+  ]
 }

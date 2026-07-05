@@ -27,9 +27,7 @@ def find_unpinned_external_uses(text: str, source: str):
             continue
 
         uses_ref = normalize_uses_ref(match.group("ref"))
-        if uses_ref.startswith("./"):
-            continue
-        if uses_ref.startswith("docker://"):
+        if uses_ref.startswith("./") or uses_ref.startswith("docker://"):
             continue
         if "@" not in uses_ref:
             yield f"{source}:{line_number}: {uses_ref} has no @ref"
@@ -46,14 +44,19 @@ def find_unpinned_external_uses(text: str, source: str):
 class WorkflowActionPinningTests(unittest.TestCase):
     def test_external_github_actions_are_pinned_to_full_length_shas(self):
         workflows = workflow_files()
-        self.assertTrue(workflows, "No workflow files found to scan. Check WORKFLOW_DIR path.")
-    def test_external_github_actions_are_pinned_to_full_length_shas(self):
-        workflows = workflow_files()
-        self.assertTrue(workflows, "No workflow files found to scan. Check WORKFLOW_DIR path.")
+        self.assertTrue(
+            workflows,
+            "No workflow files found to scan. Check WORKFLOW_DIR path.",
+        )
         failures = []
         for workflow in workflows:
             relative = workflow.relative_to(ROOT).as_posix()
-            failures.extend(find_unpinned_external_uses(workflow.read_text(encoding="utf-8"), relative))
+            failures.extend(
+                find_unpinned_external_uses(
+                    workflow.read_text(encoding="utf-8"),
+                    relative,
+                )
+            )
 
         self.assertEqual([], failures, "\n".join(failures))
 
