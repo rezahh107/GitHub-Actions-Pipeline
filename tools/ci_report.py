@@ -135,11 +135,11 @@ def build_report(
         if "valid" in path.lower() and path.lower().endswith(".py")
     ]
     version_files = [path for path in rel_files if path.split('/')[-1] in VERSION_FILES]
-    docs = sorted(
+    docs = [
         path
         for path in rel_files
-        if Path(path).name in DOC_NAMES or path.startswith("pipeline/")
-    )
+        if path.split('/')[-1] in DOC_NAMES or path.startswith("pipeline/")
+    ]
     workflows = sorted(
         path
         for path in rel_files
