@@ -1,50 +1,74 @@
 {
-  "gate_map_version": "0.1",
+  "gate_map_version": "0.1.1",
   "target_repository": "rezahh107/example-contract-repo",
   "evidence_summary": [
-    "Schema and validator files exist.",
-    "A historical schema validation regression was found."
+    "Schema and validator files are present.",
+    "A historical schema-validation regression was found in commit evidence."
   ],
   "proposed_gates": [
     {
       "gate_id": "GATE-001",
       "name": "Schema validation smoke",
-      "failure_mode": "Invalid active schema can be merged.",
+      "failure_mode": "An invalid active schema can be merged.",
       "failure_mode_class": "historical",
       "evidence": [
         "schemas/review.schema.json exists",
-        "scripts/validate_repository.py exists"
+        "scripts/validate_repository.py exists",
+        "A prior commit records a schema-validation regression"
       ],
-      "workflow_event": "pull_request",
-      "command_or_tool": "python scripts/validate_repository.py",
-      "files_changed": [
-        ".github/workflows/validate.yml"
-      ],
-      "estimated_added_seconds": 20,
-      "maintenance_cost": "low",
-      "noise_risk": "low",
-      "priority": "high",
-      "why_meaningful": "It wires an existing validator into CI.",
-      "owner_explanation_fa": "این گیت اجازه نمی‌دهد schema خراب وارد ریپو شود."
+      "execution": {
+        "events": [
+          "pull_request",
+          "push"
+        ],
+        "required_permissions": {
+          "contents": "read"
+        },
+        "runner": "ubuntu-24.04",
+        "timeout_minutes": 10,
+        "command_or_tool": "python scripts/validate_repository.py",
+        "files_changed": [
+          ".github/workflows/validate.yml"
+        ]
+      },
+      "risk_assessment": {
+        "evidence_count": 3,
+        "likelihood": "medium",
+        "impact": "high",
+        "estimated_added_seconds": 20,
+        "maintenance_cost": "low",
+        "noise_risk": "low",
+        "priority": "high"
+      },
+      "why_meaningful": "It wires an existing deterministic validator into CI.",
+      "owner_explanation_fa": "این گیت اجازه نمی‌دهد schema خراب وارد شاخه اصلی شود."
     }
   ],
   "rejected_gates": [
     {
       "name": "CodeQL default scan",
-      "reason": "No current evidence that code security scanning is the main failure mode for this personal contract repo.",
-      "owner_explanation_fa": "فعلاً خرابی اصلی این ریپو را نمی‌گیرد."
-    },
+      "reason": "No current evidence shows code-security scanning is the main failure mode for this personal contract repository.",
+      "owner_explanation_fa": "فعلاً خرابی اصلی این ریپو را نمی‌گیرد و هزینه اضافی ایجاد می‌کند."
+    }
+  ],
+  "deferred_gates": [
     {
-      "name": "Heavy Python version matrix",
-      "reason": "Deferred because there is no compatibility evidence yet.",
-      "owner_explanation_fa": "اگر بعداً مشکل نسخه پایتون دیدیم، اضافه می‌شود."
+      "gate_id": "GATE-002",
+      "name": "Python compatibility matrix",
+      "reason": "No current compatibility failure or supported-version contract justifies a matrix.",
+      "required_evidence": [
+        "A documented supported Python range",
+        "A real compatibility regression or version-specific dependency"
+      ],
+      "reconsider_when": "The repository publishes a supported Python range or records a version-specific failure.",
+      "owner_explanation_fa": "تا زمانی که مشکل واقعی نسخه پایتون دیده نشده، ماتریس اضافه نمی‌شود."
     }
   ],
   "required_checks_recommendation": [
-    "validate / repository-validation"
+    "Validate / repository-validation"
   ],
   "owner_permission_required": true,
   "limitations": [
-    "Workflow telemetry unavailable in this example."
+    "Workflow telemetry is unavailable in this example."
   ]
 }
