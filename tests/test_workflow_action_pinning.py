@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_DIR = ROOT / ".github" / "workflows"
-USES_RE = re.compile(r"^\s*uses:\s*(?P<ref>[^#\n]+?)\s*(?:#.*)?$")
+USES_RE = re.compile(r"^\s*(?:-\s*)?uses:\s*(?P<ref>[^#\n]+?)\s*(?:#.*)?$")
 FULL_LENGTH_SHA_RE = re.compile(r"[0-9a-fA-F]{40}")
 
 
