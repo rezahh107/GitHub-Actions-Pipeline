@@ -78,9 +78,20 @@ prompts/
   03-post-implementation-validation.md
   04-scope-claim-audit.md
 
+risk-patterns/
+  README.md
+  python-package.yaml
+  python-desktop.yaml
+  browser-extension-mv3.yaml
+  wordpress-plugin.yaml
+  contract-schema-repo.yaml
+  docs-only-repo.yaml
+  multi-repo-adapter.yaml
+
 schemas/
   ci_detective_report.schema.json
   ci_gate_map.schema.json
+  risk_pattern.schema.json
   scope_claim_audit.schema.json
 
 examples/
@@ -111,7 +122,7 @@ tests/
   validate.yml
 ```
 
-JSON is the canonical fixture format. A second hand-maintained YAML copy is intentionally not kept because duplicate fixtures can drift.
+JSON is the canonical fixture format. A second hand-maintained YAML copy is intentionally not kept because duplicate fixtures can drift. The domain risk-pattern library uses YAML because it is a hand-maintained domain catalog, not a duplicate fixture set.
 
 ## Scope Claim Audit
 
@@ -123,10 +134,10 @@ It is advisory by default and feeds CI gate design decisions; it is not a generi
 
 1. Load this repository and its operating rules.
 2. Intake the target repository and connector scope.
-3. Build a factual static inventory.
+3. Build a factual static inventory, including domain risk-pattern detection signals.
 4. Mine bounded English and Persian commit evidence.
 5. Inspect workflow telemetry and cross-repository evidence when accessible.
-6. Classify failure modes.
+6. Classify failure modes, adding matched domain risk patterns as candidate risks.
 7. Apply the Gate Meaningfulness Test.
 8. Produce a schema-valid CI Gate Map.
 9. Give a short Persian owner briefing.
@@ -203,7 +214,7 @@ Markdown, pipeline protocol files, and prompts are intentionally **not** exclude
 
 ## Local Validation
 
-The runtime collector uses only the Python standard library. Tests use `jsonschema`.
+The runtime collector uses only the Python standard library. Tests use `jsonschema` and `pyyaml`.
 
 ```bash
 python -m pip install -r requirements-test.txt
