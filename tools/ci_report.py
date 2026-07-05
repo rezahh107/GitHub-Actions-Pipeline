@@ -85,7 +85,7 @@ def rel(root: Path, path: Path) -> str:
 
 
 def is_test_file(path: str) -> bool:
-    name = Path(path).name.lower()
+    name = path.split('/')[-1].lower()
     lowered = path.lower()
     return (
         name.startswith("test_")
