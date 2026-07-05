@@ -58,10 +58,10 @@ class StartProtocolTests(unittest.TestCase):
         )
         self.assertTrue(guard["audit_only_when_explicitly_requested"])
 
-    def test_user_facing_documents_share_the_canonical_response(self):
+    def test_visible_entry_files_share_the_canonical_response(self):
         paths = [
             ROOT / "README.md",
-            ROOT / "AGENTS.md",
+            ROOT / "START.md",
             ROOT / "prompts" / "00-start.md",
         ]
         for path in paths:
@@ -69,12 +69,15 @@ class StartProtocolTests(unittest.TestCase):
                 text = path.read_text(encoding="utf-8")
                 self.assertIn(EXPECTED_RESPONSE, text)
 
-    def test_agents_start_rule_precedes_normal_operating_rules(self):
-        text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-        self.assertLess(
-            text.index("## Immediate Start Rule"),
-            text.index("## Repository Mission"),
-        )
+    def test_readme_links_the_start_entry_and_contract(self):
+        text = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("START.md", text)
+        self.assertIn("protocol/start.yaml", text)
+
+    def test_full_project_reference_is_preserved(self):
+        reference = ROOT / "docs" / "project-reference.md"
+        self.assertTrue(reference.is_file())
+        self.assertIn("## Pipeline Phases", reference.read_text(encoding="utf-8"))
 
     def test_legacy_english_start_response_is_removed(self):
         text = (ROOT / "prompts" / "00-start.md").read_text(encoding="utf-8")
