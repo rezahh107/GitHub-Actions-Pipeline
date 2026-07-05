@@ -45,8 +45,11 @@ def find_unpinned_external_uses(text: str, source: str):
 
 class WorkflowActionPinningTests(unittest.TestCase):
     def test_external_github_actions_are_pinned_to_full_length_shas(self):
+        workflows = workflow_files()
+        self.assertTrue(workflows, "No workflow files found to scan. Check WORKFLOW_DIR path.")
+
         failures = []
-        for workflow in workflow_files():
+        for workflow in workflows:
             relative = workflow.relative_to(ROOT).as_posix()
             failures.extend(find_unpinned_external_uses(workflow.read_text(encoding="utf-8"), relative))
 
