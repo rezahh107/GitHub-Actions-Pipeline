@@ -75,7 +75,7 @@ def iter_files(
         base = Path(current_root)
         for name in sorted(files):
             candidate = base / name
-            if candidate.resolve() in excluded:
+            if candidate in excluded:
                 continue
             yield candidate
 
