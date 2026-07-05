@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pipeline Start Protocol",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract_id",
+    "state_transition",
+    "triggers",
+    "response",
+    "before_target_repository",
+    "target_repository_input",
+    "self_repository_guard"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "contract_id": {
+      "const": "pipeline-start"
+    },
+    "state_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": {"const": "boot"},
+        "to": {"const": "awaiting_target_repository"}
+      }
+    },
+    "triggers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exact", "matching"],
+      "properties": {
+        "exact": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "matching": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "trim_whitespace",
+            "case_sensitive",
+            "requires_missing_target_repository"
+          ],
+          "properties": {
+            "trim_whitespace": {"const": true},
+            "case_sensitive": {"const": false},
+            "requires_missing_target_repository": {"const": true}
+          }
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "exact_text",
+        "exact_match_required",
+        "max_lines",
+        "stop_after_response"
+      ],
+      "properties": {
+        "language": {
+          "type": "string",
+          "minLength": 2
+        },
+        "exact_text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exact_match_required": {"const": true},
+        "max_lines": {"const": 1},
+        "stop_after_response": {"const": true}
+      }
+    },
+    "before_target_repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed", "forbidden"],
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbidden": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "target_repository_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accepted_forms", "next_state"],
+      "properties": {
+        "accepted_forms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["github_url", "owner_slash_repository"]
+          }
+        },
+        "next_state": {"const": "audit_only"}
+      }
+    },
+    "self_repository_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "role",
+        "audit_only_when_explicitly_requested"
+      ],
+      "properties": {
+        "repository": {
+          "const": "rezahh107/GitHub-Actions-Pipeline"
+        },
+        "role": {
+          "const": "pipeline_definition_repository"
+        },
+        "audit_only_when_explicitly_requested": {
+          "const": true
+        }
+      }
+    }
+  }
+}

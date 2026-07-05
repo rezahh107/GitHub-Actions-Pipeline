@@ -1,0 +1,52 @@
+schema_version: "1.0"
+contract_id: pipeline-start
+
+state_transition:
+  from: boot
+  to: awaiting_target_repository
+
+triggers:
+  exact:
+    - شروع
+    - شروع کن
+    - آغاز
+    - start
+    - begin
+    - load pipeline
+  matching:
+    trim_whitespace: true
+    case_sensitive: false
+    requires_missing_target_repository: true
+
+response:
+  language: fa
+  exact_text: "آماده‌ام. آدرس ریپو را برای بررسی بفرست."
+  exact_match_required: true
+  max_lines: 1
+  stop_after_response: true
+
+before_target_repository:
+  allowed:
+    - load_pipeline_contract
+    - emit_start_response
+  forbidden:
+    - inspect_repository
+    - inspect_pipeline_repository
+    - audit_repository
+    - propose_ci_gates
+    - modify_repository
+    - create_branch
+    - open_pull_request
+    - ask_technical_question
+    - explain_internal_process
+
+target_repository_input:
+  accepted_forms:
+    - github_url
+    - owner_slash_repository
+  next_state: audit_only
+
+self_repository_guard:
+  repository: rezahh107/GitHub-Actions-Pipeline
+  role: pipeline_definition_repository
+  audit_only_when_explicitly_requested: true
