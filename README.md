@@ -69,31 +69,41 @@ pipeline/
   05-ci-gate-map.md
   06-implementation-protocol.md
   07-validation-and-reporting.md
+  08-scope-claim-audit.md
 
 prompts/
   00-start.md
   01-audit-only.md
   02-implementation-after-approval.md
   03-post-implementation-validation.md
+  04-scope-claim-audit.md
 
 schemas/
   ci_detective_report.schema.json
   ci_gate_map.schema.json
+  scope_claim_audit.schema.json
 
 examples/
   ci_detective_report.example.json
   ci_gate_map.example.json
+  scope_claim_audit.example.json
+  scope_claim_audit.true-negative.example.json
+  scope_claim_audit.ambiguous.example.json
 
 tools/
   ci_detective.py
   ci_git_evidence.py
   ci_models.py
   ci_report.py
+  scope_claim_audit.py
 
 tests/
   test_ci_detective.py
   test_examples.py
   test_schemas.py
+  test_scope_claim_audit_examples.py
+  test_scope_claim_audit_schema.py
+  test_scope_claim_audit_tool.py
   test_workflow_action_pinning.py
   test_workflow_contract.py
 
@@ -102,6 +112,12 @@ tests/
 ```
 
 JSON is the canonical fixture format. A second hand-maintained YAML copy is intentionally not kept because duplicate fixtures can drift.
+
+## Scope Claim Audit
+
+Scope Claim Audit checks whether a PR claim under-reports actual changed scope, especially when the diff touches sensitive repository surfaces such as schemas, validators, workflows, release locks, package metadata, generated outputs, or protocol files.
+
+It is advisory by default and feeds CI gate design decisions; it is not a generic merge stopper. Future enforced mode is valid only when a target repository has a real wired gate and the audit package declares `enforcement_mode: enforced` plus `wired_enforcement_gate` metadata.
 
 ## Pipeline Phases
 
@@ -196,6 +212,10 @@ python tools/ci_detective.py \
   --repo-root . \
   --out /tmp/ci_detective_report.json \
   --generated-at 2026-07-05T00:00:00Z
+python tools/scope_claim_audit.py --check examples/scope_claim_audit.example.json
+python tools/scope_claim_audit.py --check examples/scope_claim_audit.true-negative.example.json
+python tools/scope_claim_audit.py --check examples/scope_claim_audit.ambiguous.example.json
+python tools/scope_claim_audit.py --input examples/scope_claim_audit.example.json --out /tmp/scope_claim_audit.summary.md
 ```
 
 ## Intentionally Not Added by Default
