@@ -19,13 +19,13 @@ Assume the agent interacts with GitHub through connector/API operations unless a
 
 The agent may use GitHub Connector to:
 
-- inspect files;
-- create or update files;
-- create branches;
-- open or update pull requests;
-- inspect workflow runs when accessible;
-- inspect artifacts or summaries when accessible;
-- apply changes after owner approval.
+* inspect files;
+* create or update files;
+* create branches;
+* open or update pull requests;
+* inspect workflow runs when accessible;
+* inspect artifacts or summaries when accessible;
+* apply changes after owner approval.
 
 The agent must not assume it can directly run local shell commands such as `git log`, `git grep`, `python`, `pytest`, or `bash` unless a runner/tool execution environment is explicitly available.
 
@@ -37,12 +37,12 @@ The owner is not expected to make technical CI/CD decisions.
 
 Do not ask the owner to choose between technical options such as:
 
-- whether to use pytest or unittest;
-- whether to use a matrix;
-- whether to add cache;
-- whether to split workflows;
-- whether to add CodeQL, Scorecard, dependency review, or other tools;
-- which GitHub Actions syntax or architecture to use.
+* whether to use pytest or unittest;
+* whether to use a matrix;
+* whether to add cache;
+* whether to split workflows;
+* whether to add CodeQL, Scorecard, dependency review, or other tools;
+* which GitHub Actions syntax or architecture to use.
 
 The agent must decide technical matters itself.
 
@@ -94,41 +94,59 @@ Do not add CI theater.
 
 Avoid:
 
-- generic checks without repository evidence;
-- heavy security scanners by default;
-- broad matrix builds without compatibility risk;
-- slow workflows without signal;
-- duplicated validator logic inside workflow YAML;
-- many fragile path allowlists;
-- documentation-only enforcement that is not wired into CI;
-- claims of success without evidence.
+* generic checks without repository evidence;
+* heavy security scanners by default;
+* broad matrix builds without compatibility risk;
+* slow workflows without signal;
+* duplicated validator logic inside workflow YAML;
+* many fragile path allowlists;
+* documentation-only enforcement that is not wired into CI;
+* claims of success without evidence.
 
 Prefer:
 
-- wiring existing validators into CI;
-- small deterministic tests;
-- clear failure messages;
-- stable job names;
-- fast structural checks before slower behavioral checks;
-- simple workflow files;
-- branch-based reversible implementation.
+* wiring existing validators into CI;
+* small deterministic tests;
+* clear failure messages;
+* stable job names;
+* fast structural checks before slower behavioral checks;
+* simple workflow files;
+* branch-based reversible implementation.
 
 ## Scope Claim Audit Rule
 
-Scope Claim Audit separates deterministic diff facts from interpretive claim classification. A mismatch or under-reported signal is advisory by default and should feed review attention or future CI Gate Map design, not automatic rejection.
+Scope Claim Audit is part of this repository's review vocabulary, not an unrelated carryover. It checks whether a PR, handoff, implementation summary, or final Persian report accurately describes changed scope and enforcement state.
 
-Do not treat a Scope Claim Audit result as enforced unless the target repository has a real wired enforcement gate and the audit package declares `enforcement_mode: enforced` with non-null `wired_enforcement_gate` metadata.
+A `claim` is an explicit statement about what changed, what was validated, what passed, what failed, what is enforced, or what is safe to rely on. Claims may appear in PR titles, PR bodies, commit messages, review comments, handoff text, implementation summaries, or final owner reports.
+
+Scope Claim Audit separates:
+
+* deterministic diff facts: connector or runner facts such as changed paths, file statuses, additions/deletions, sensitive surfaces, tested head SHA, workflow names, check names, artifacts, and validation results;
+* interpretive claim classification: the model's judgment about whether the claim text matches those facts.
+
+The Scope Claim Audit schema currently allows these `enforcement_mode` values:
+
+```text
+advisory = review signal only; it must not block by itself and `wired_enforcement_gate` must be null
+enforced = a real workflow/check/policy gate is wired and identified through non-null `wired_enforcement_gate`
+```
+
+Use `enforced` only when direct repository evidence identifies the wired gate, such as workflow path, check name, gate name, and enforcement evidence. Otherwise use `advisory` and do not describe the result as blocking or enforced.
+
+The `enforcement_mode` and `wired_enforcement_gate` fields belong to Scope Claim Audit outputs that conform to `schemas/scope_claim_audit.schema.json`. They do not replace `evidence_level`, CI Gate Map fields, risk assessment, or the Gate Meaningfulness Test.
+
+This rule is a specific case of the Evidence Rules below: silence is not proof, and claims about validation or enforcement must be backed by exact evidence. Scope Claim Audit may feed review attention or future CI Gate Map design, but it does not replace the CI Gate Map or the Gate Meaningfulness Test.
 
 ## Evidence Rules
 
 The agent must separate:
 
-- confirmed evidence;
-- structural inference;
-- domain-pattern inference;
-- cross-repo evidence;
-- hypothetical risk;
-- rejected gates.
+* confirmed evidence;
+* structural inference;
+* domain-pattern inference;
+* cross-repo evidence;
+* hypothetical risk;
+* rejected gates.
 
 Do not call a risk `real` without evidence.
 
@@ -145,6 +163,8 @@ hypothetical    = plausible but weakly evidenced
 When evidence is unavailable, say so.
 Silence is not proof.
 
+For PR, handoff, implementation-summary, or final-report claims about changed scope, validation, blocking behavior, or enforcement, also apply the Scope Claim Audit Rule above.
+
 ## Personal Repository Security Policy
 
 The target repositories are usually personal, solo-maintainer repositories.
@@ -154,43 +174,43 @@ Do not add enterprise-grade security controls unless repository evidence justifi
 
 Do not add by default:
 
-- OpenSSF Scorecard;
-- CodeQL;
-- dependency review;
-- secret scanning workflows;
-- vulnerability gates;
-- mandatory full-length SHA pinning for every action;
-- heavy scheduled scans;
-- enterprise-style policy enforcement.
+* OpenSSF Scorecard;
+* CodeQL;
+* dependency review;
+* secret scanning workflows;
+* vulnerability gates;
+* mandatory full-length SHA pinning for every action;
+* heavy scheduled scans;
+* enterprise-style policy enforcement.
 
 Keep low-friction safety guardrails:
 
-- do not use workflow-level `write-all` permissions;
-- use only required permissions;
-- avoid printing secrets or sensitive values to logs;
-- avoid `pull_request_target` unless there is a clear documented reason;
-- keep workflow/job names stable if they may become required checks;
-- prefer trusted official/common actions unless repository evidence says otherwise.
+* do not use workflow-level `write-all` permissions;
+* use only required permissions;
+* avoid printing secrets or sensitive values to logs;
+* avoid `pull_request_target` unless there is a clear documented reason;
+* keep workflow/job names stable if they may become required checks;
+* prefer trusted official/common actions unless repository evidence says otherwise.
 
 ## GitHub Connector Implementation Rules
 
 Before owner approval:
 
-- read-only analysis only;
-- do not create branches;
-- do not commit files;
-- do not open PRs;
-- do not modify workflows;
-- do not claim enforcement.
+* read-only analysis only;
+* do not create branches;
+* do not commit files;
+* do not open PRs;
+* do not modify workflows;
+* do not claim enforcement.
 
 After explicit owner approval:
 
-- create a dedicated branch;
-- apply the smallest useful patch;
-- commit only related files;
-- open or update a PR if appropriate;
-- verify workflow results on the exact head SHA when possible;
-- report evidence honestly.
+* create a dedicated branch;
+* apply the smallest useful patch;
+* commit only related files;
+* open or update a PR if appropriate;
+* verify workflow results on the exact head SHA when possible;
+* report evidence honestly.
 
 Never modify `main` directly unless the owner explicitly asks for direct main edits and the repository is in bootstrap state.
 
@@ -269,12 +289,12 @@ User-facing reports must be in Persian.
 
 They must be:
 
-- short;
-- practical;
-- non-technical where possible;
-- clear about decisions made by the model;
-- honest about missing evidence;
-- supported by exact file paths, branch names, commit SHAs, or workflow run evidence when applicable.
+* short;
+* practical;
+* non-technical where possible;
+* clear about decisions made by the model;
+* honest about missing evidence;
+* supported by exact file paths, branch names, commit SHAs, or workflow run evidence when applicable.
 
 Use mental imagery when helpful.
 
