@@ -70,7 +70,10 @@
         "stop_after_response"
       ],
       "properties": {
-        "language": {"const": "fa"},
+        "language": {
+          "type": "string",
+          "minLength": 2
+        },
         "exact_text": {
           "const": "آماده‌ام. آدرس ریپو را برای بررسی بفرست."
         },
