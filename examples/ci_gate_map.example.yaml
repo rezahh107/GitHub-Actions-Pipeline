@@ -1,0 +1,35 @@
+gate_map_version: "0.1"
+target_repository: "rezahh107/example-contract-repo"
+evidence_summary:
+  - "Schema and validator files exist."
+  - "A historical schema validation regression was found."
+proposed_gates:
+  - gate_id: "GATE-001"
+    name: "Schema validation smoke"
+    failure_mode: "Invalid active schema can be merged."
+    failure_mode_class: "historical"
+    evidence:
+      - "schemas/review.schema.json exists"
+      - "scripts/validate_repository.py exists"
+    workflow_event: "pull_request"
+    command_or_tool: "python scripts/validate_repository.py"
+    files_changed:
+      - ".github/workflows/validate.yml"
+    estimated_added_seconds: 20
+    maintenance_cost: "low"
+    noise_risk: "low"
+    priority: "high"
+    why_meaningful: "It wires an existing validator into CI."
+    owner_explanation_fa: "این گیت مثل قفل ساده‌ای است که اجازه نمی‌دهد schema خراب وارد ریپو شود."
+rejected_gates:
+  - name: "CodeQL default scan"
+    reason: "No current evidence that code security scanning is the main failure mode for this personal contract repo."
+    owner_explanation_fa: "فعلاً مثل نصب درِ ضدسرقت روی انباری کوچک است؛ هزینه ذهنی دارد ولی خرابی اصلی را نمی‌گیرد."
+  - name: "Heavy Python version matrix"
+    reason: "Deferred because there is no compatibility evidence yet."
+    owner_explanation_fa: "اگر بعداً مشکل نسخه پایتون دیدیم، اضافه می‌شود."
+required_checks_recommendation:
+  - "validate / repository-validation"
+owner_permission_required: true
+limitations:
+  - "Workflow telemetry unavailable in this example."
