@@ -5,16 +5,30 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import yaml
 from jsonschema import Draft7Validator, ValidationError
 
 from tools.ci_detective import compute_evidence_sha256
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXED_TIME = "2026-07-05T00:00:00Z"
+EXPECTED_RISK_PATTERN_FILES = {
+    "browser-extension-mv3.yaml",
+    "contract-schema-repo.yaml",
+    "docs-only-repo.yaml",
+    "multi-repo-adapter.yaml",
+    "python-desktop.yaml",
+    "python-package.yaml",
+    "wordpress-plugin.yaml",
+}
 
 
 def load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_yaml(path: Path):
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
 class SchemaValidationTests(unittest.TestCase):
@@ -34,6 +48,17 @@ class SchemaValidationTests(unittest.TestCase):
         schema = load_json(ROOT / "schemas" / "ci_gate_map.schema.json")
         instance = load_json(ROOT / "examples" / "ci_gate_map.example.json")
         Draft7Validator(schema).validate(instance)
+
+    def test_risk_pattern_yaml_files_validate_against_schema(self):
+        schema = load_json(ROOT / "schemas" / "risk_pattern.schema.json")
+        validator = Draft7Validator(schema)
+        pattern_paths = sorted((ROOT / "risk-patterns").glob("*.yaml"))
+
+        self.assertEqual({path.name for path in pattern_paths}, EXPECTED_RISK_PATTERN_FILES)
+
+        for path in pattern_paths:
+            with self.subTest(path=path.name):
+                validator.validate(load_yaml(path))
 
     def test_generated_ci_detective_report_validates_against_schema(self):
         schema = load_json(ROOT / "schemas" / "ci_detective_report.schema.json")
@@ -61,6 +86,25 @@ class SchemaValidationTests(unittest.TestCase):
         schema = load_json(ROOT / "schemas" / "ci_gate_map.schema.json")
         instance = load_json(ROOT / "examples" / "ci_gate_map.example.json")
         instance.pop("deferred_gates")
+        with self.assertRaises(ValidationError):
+            Draft7Validator(schema).validate(instance)
+
+    def test_risk_pattern_schema_rejects_malformed_data(self):
+        schema = load_json(ROOT / "schemas" / "risk_pattern.schema.json")
+        instance = {
+            "project_type": "",
+            "detection_signals": [{}],
+            "risk_patterns": [
+                {
+                    "id": "bad-pattern",
+                    "description": "",
+                    "typical_trigger": "missing strict fields",
+                    "detectability": "unknown",
+                    "suggested_gate": "",
+                }
+            ],
+            "unexpected": True,
+        }
         with self.assertRaises(ValidationError):
             Draft7Validator(schema).validate(instance)
 

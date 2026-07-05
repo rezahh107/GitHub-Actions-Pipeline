@@ -1,0 +1,26 @@
+project_type: docs-only-repo
+detection_signals:
+- signal: Repository contains primarily Markdown, MDX, reStructuredText, images, or static-site content
+- signal: No application package metadata, runtime source tree, or compiled release artifact is present
+- signal: Optional static site config such as mkdocs.yml, docusaurus.config.*, astro.config.*, or vitepress config
+risk_patterns:
+- id: broken-internal-links
+  description: Internal documentation links point to missing files, anchors, or renamed pages.
+  typical_trigger: Docs pages are moved or headings are renamed without updating references.
+  detectability: medium
+  suggested_gate: Documentation link checker validates internal file and anchor references for committed
+    docs.
+- id: static-site-build-failure
+  description: A docs site generator is configured but the site no longer builds.
+  typical_trigger: Config, MDX components, plugin versions, or content syntax changes break the static site
+    build.
+  detectability: easy
+  suggested_gate: If a static site generator config exists, run the documented docs build command in CI.
+- id: no-code-gates-needed
+  description: A truly docs-only repository should not receive code-level CI gates without repository evidence.
+  typical_trigger: Generic templates add Python, Node, security, or packaging checks to a documentation-only
+    repository.
+  detectability: easy
+  suggested_gate: manual_review_only
+notes: Docs-only repositories should not be forced into code-style CI gates unless repository evidence
+  justifies them.

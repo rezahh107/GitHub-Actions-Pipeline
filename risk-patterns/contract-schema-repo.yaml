@@ -1,0 +1,43 @@
+project_type: contract-schema-repo
+detection_signals:
+- signal: schemas/ directory with JSON Schema, OpenAPI, AsyncAPI, or similar contract files
+- signal: examples/, fixtures/, or testdata/ directories containing expected pass/fail instances
+- signal: generated artifacts, adapters, manifests, lockfiles, or hashes derived from a canonical contract
+risk_patterns:
+- id: schema-invalidity
+  description: Committed schema files are invalid for the declared schema dialect or contract format.
+  typical_trigger: Schema keywords, references, or dialect declarations are edited without self-validation.
+  detectability: easy
+  suggested_gate: Validator test checks every schema file with the declared validator or metaschema before
+    validating instances.
+- id: fixture-pass-fail-inversion
+  description: Fixtures with expected pass/fail outcomes change behavior without being noticed.
+  typical_trigger: Schema constraints are changed and fixture expectations are not asserted explicitly.
+  detectability: easy
+  suggested_gate: Fixture test separates valid and invalid fixture directories and asserts each file has
+    the expected validation result.
+- id: version-manifest-drift
+  description: Contract version, manifest version, schema id, or package metadata values that must agree
+    drift apart.
+  typical_trigger: A release bump updates one metadata file but not schema ids, manifest fields, or generated
+    docs.
+  detectability: easy
+  suggested_gate: Static consistency test parses all declared version/manifest sources and asserts the required
+    values agree.
+- id: lockfile-hash-drift
+  description: Lockfiles, checksums, or evidence hashes no longer match the canonical contract.
+  typical_trigger: Contract files change without regenerating lock or hash artifacts.
+  detectability: medium
+  suggested_gate: Regeneration check recomputes lock/hash artifacts and fails if the computed digest differs.
+- id: silent-field-loss
+  description: Adapters, producers, or consumers lose contract fields without a validation failure.
+  typical_trigger: Mapping code is updated for one side of the contract but not for downstream adapters.
+  detectability: hard
+  suggested_gate: Round-trip fixture test maps representative instances through adapters and asserts required
+    fields survive unchanged.
+- id: generated-artifact-mismatch
+  description: Generated documentation, clients, types, or fixtures no longer match the canonical contract.
+  typical_trigger: Generated files are committed but not regenerated after schema changes.
+  detectability: medium
+  suggested_gate: Run the documented generator and fail if generated artifacts differ from committed files.
+notes: Use this pattern when schemas/contracts are a product surface, not incidental validation files.

@@ -1,0 +1,45 @@
+project_type: wordpress-plugin
+detection_signals:
+- signal: PHP plugin file with WordPress plugin header fields such as Plugin Name and Version
+- signal: WordPress enqueue calls, action/filter hooks, or translation-loading calls in PHP files
+- signal: assets, build, languages, or readme.txt files typical of WordPress plugin packaging
+risk_patterns:
+- id: php-version-test-gap
+  description: Declared PHP compatibility is not covered by any executed PHP test/runtime version.
+  typical_trigger: Plugin header or composer constraint changes without updating the CI PHP version matrix.
+  detectability: medium
+  suggested_gate: If PHP tests exist, CI runs them on the minimum declared PHP version and fails when the
+    declared minimum is untested.
+- id: plugin-header-version-drift
+  description: Plugin header Version value diverges from package metadata, constants, or release notes.
+  typical_trigger: Release bump updates one source of version truth but misses the main plugin header.
+  detectability: easy
+  suggested_gate: Static test parses the main plugin header and compares Version to the repository's declared
+    version source.
+- id: enqueue-asset-breakage
+  description: Registered or enqueued script/style handles point to files that are missing or renamed.
+  typical_trigger: Build tooling changes asset names while PHP enqueue paths stay stale.
+  detectability: medium
+  suggested_gate: Static path test extracts practical enqueue asset references and asserts referenced JS/CSS
+    files exist after build.
+- id: missing-built-assets
+  description: Required JS or CSS assets are not compiled before packaging.
+  typical_trigger: dist/build files are gitignored or release packaging runs without npm/composer build step.
+  detectability: easy
+  suggested_gate: Packaging test runs the documented build command or inspects release output and asserts
+    expected JS/CSS artifacts exist.
+- id: textdomain-mismatch
+  description: Plugin header Text Domain and translation-loading usage disagree, breaking translations.
+  typical_trigger: Plugin slug or textdomain is renamed in one location only.
+  detectability: medium
+  suggested_gate: Static test parses plugin header Text Domain and checks translation-loading calls and language
+    file paths use the same value.
+- id: admin-frontend-hook-regression
+  description: Admin-only hooks are registered for frontend execution or frontend hooks are registered only
+    in admin context.
+  typical_trigger: Hook registration is moved behind admin-context checks or shared bootstrap files without
+    coverage.
+  detectability: hard
+  suggested_gate: manual_review_only
+notes: Use WordPress-specific gates only when plugin evidence exists; generic PHP repositories should use
+  a separate pattern.

@@ -1,0 +1,32 @@
+project_type: multi-repo-adapter
+detection_signals:
+- signal: Documentation references sibling repositories, producer repositories, consumer repositories, or ecosystem variants
+- signal: Adapter, bridge, mapper, import/export, or contract boundary files are present
+- signal: Versioned contract names, fixture exchanges, or cross-repository evidence requirements appear in docs or tests
+risk_patterns:
+- id: unsupported-producer-variant
+  description: A producer variant is not supported by the consumer adapter.
+  typical_trigger: Producer repository adds a new variant, component type, or schema branch without updating
+    the adapter.
+  detectability: hard
+  suggested_gate: Cross-repo fixture test imports representative producer outputs and asserts the consumer
+    adapter accepts every declared supported variant.
+- id: cross-boundary-field-loss
+  description: Fields are lost across repository boundaries without an explicit rejection or migration note.
+  typical_trigger: Adapter mapping omits a field from the upstream contract.
+  detectability: hard
+  suggested_gate: Round-trip or golden fixture test compares producer fixture fields to consumer output and
+    fails on undocumented field loss.
+- id: contract-version-drift-no-evidence
+  description: Producer and consumer contract versions drift without corresponding CI evidence proving compatibility.
+  typical_trigger: One repository bumps a contract version while sibling repositories remain outside connector
+    scope or CI coverage.
+  detectability: medium
+  suggested_gate: Compatibility evidence check records producer/consumer contract versions and requires a
+    recent cross-repo fixture validation artifact before proposing enforcement.
+- id: missing-cross-repo-evidence
+  description: Connector scope does not cover sibling repositories needed to verify adapter compatibility.
+  typical_trigger: Audit is run on one repository while related producer or consumer repositories are unavailable.
+  detectability: easy
+  suggested_gate: manual_review_only
+notes: This pattern is additive with the underlying technology pattern, such as python-package or contract-schema-repo.

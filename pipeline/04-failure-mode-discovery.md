@@ -18,46 +18,48 @@ Use these classes:
 
 A risk must not be called real without evidence.
 
-## Domain Pattern Examples
+## Domain Risk Pattern Match
 
-Python package:
+`risk-patterns/` is the concrete library for `domain_pattern` evidence.
 
-- package version drift;
-- import failure;
-- missing test execution;
-- metadata mismatch.
+During Static Repository Inventory, the agent checks `detection_signals` from every `risk-patterns/*.yaml` file against the actual target repository structure. Any `project_type` whose signals match contributes its `risk_patterns` to the failure-mode candidate list.
 
-Browser extension MV3:
+Each activated pattern is tagged with:
 
-- manifest drift;
-- missing build artifact;
-- content script path mismatch;
-- package output missing expected files.
+```yaml
+evidence_level: domain_pattern
+```
 
-Contract or schema repository:
+A target repository can match more than one `project_type`. Matching project types are additive, not mutually exclusive.
 
-- invalid schema;
-- fixture pass/fail inversion;
-- version or manifest drift;
-- generated output mismatch.
+Example: a Python package that is also part of a multi-repo ecosystem can activate both `python-package` and `multi-repo-adapter`.
 
-Docs-only repository:
+If no project type matches, report:
 
-- broken references;
-- missing required sections;
-- stale generated index.
+```text
+no domain risk pattern matched — falling back to generic checklist only
+```
 
-LLM workflow repository:
+Domain patterns are candidate risks, not automatic CI gates.
 
-- prompt contract drift;
-- schema mismatch;
-- unclear handoff format.
+A pattern becomes a proposed gate only after the existing Gate Meaningfulness Test confirms:
 
-Multi-repo adapter:
+- repository evidence;
+- practical machine-checkability;
+- acceptable runtime/noise;
+- clear maintainer actionability.
 
-- producer and consumer contract mismatch;
-- silent field loss;
-- unsupported variant crossing repository boundary.
+## Current Library
+
+The initial domain risk-pattern library covers:
+
+- `python-package`;
+- `python-desktop`;
+- `browser-extension-mv3`;
+- `wordpress-plugin`;
+- `contract-schema-repo`;
+- `docs-only-repo`;
+- `multi-repo-adapter`.
 
 ## Output Rule
 

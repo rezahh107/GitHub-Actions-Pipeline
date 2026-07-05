@@ -1,0 +1,47 @@
+project_type: browser-extension-mv3
+detection_signals:
+- signal: manifest.json with manifest_version set to 3
+- signal: background.service_worker, content_scripts, permissions, or web_accessible_resources in manifest.json
+- signal: extension packaging files such as dist/, build/, icons/, popup, options, or service worker scripts
+risk_patterns:
+- id: manifest-schema-drift
+  description: Manifest keys or MV3 structure drift away from browser extension requirements.
+  typical_trigger: Manifest is edited manually while code paths, permissions, or MV3-only fields change.
+  detectability: easy
+  suggested_gate: Static test parses manifest.json and validates required MV3 fields, file references,
+    icons, and known key shapes against a repository-owned manifest contract.
+- id: missing-build-artifacts
+  description: The final extension package references files that are not present in the packaged output.
+  typical_trigger: Build output directory is cleaned, renamed, or excludes compiled JS/CSS/assets.
+  detectability: easy
+  suggested_gate: Build or inspect the package directory and assert every manifest-referenced file exists
+    before zipping.
+- id: service-worker-lifecycle-regression
+  description: Service worker event listeners are registered too late or behind async initialization, causing
+    MV3 events to be missed.
+  typical_trigger: Listener registration is moved inside promises, callbacks, or delayed startup code.
+  detectability: hard
+  suggested_gate: Static test checks that critical chrome.* event listener registrations in the service
+    worker appear at top-level scope; deeper lifecycle behavior remains manual review.
+- id: content-script-path-mismatch
+  description: Content script paths in manifest.json do not match the built or source files shipped with
+    the extension.
+  typical_trigger: Source files are moved or bundler output names change without updating manifest content_scripts.
+  detectability: easy
+  suggested_gate: Static manifest/package test asserts each content_scripts js/css path exists in the final
+    package directory.
+- id: permission-overdeclaration
+  description: Manifest permissions exceed the extension behavior justified by repository evidence.
+  typical_trigger: Broad permissions are copied from examples or retained after feature removal.
+  detectability: medium
+  suggested_gate: Static permission allowlist test compares manifest permissions and host_permissions to
+    a repository-owned expected list.
+- id: zip-completeness-failure
+  description: Release zip omits manifest, icons, service worker, content scripts, or compiled assets needed
+    to install the extension.
+  typical_trigger: Packaging command zips the wrong directory or misses generated files.
+  detectability: easy
+  suggested_gate: Package smoke test builds the zip, lists its contents, and asserts manifest.json plus every
+    manifest-referenced file is included.
+notes: Domain patterns are for Manifest V3 extensions; Manifest V2 or browser-specific variants need separate
+  evidence.
