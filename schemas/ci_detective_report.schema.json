@@ -3,56 +3,259 @@
   "title": "CI Detective Report",
   "type": "object",
   "additionalProperties": false,
-  "required": ["report_version", "generated_at", "repository", "default_branch", "connector_scope", "inventory", "workflows", "workflow_runs", "historical_signals", "persian_historical_signals", "hotspots", "cross_repo_evidence", "limitations", "evidence_completeness"],
+  "required": [
+    "report_version",
+    "canonicalization_version",
+    "generated_at",
+    "evidence_sha256",
+    "repository",
+    "default_branch",
+    "run_context",
+    "connector_scope",
+    "inventory",
+    "workflows",
+    "workflow_runs",
+    "historical_signals",
+    "persian_historical_signals",
+    "hotspots",
+    "cross_repo_evidence",
+    "limitations",
+    "evidence_completeness"
+  ],
   "properties": {
-    "report_version": {"type": "string"},
-    "generated_at": {"type": "string"},
-    "repository": {"type": "string"},
-    "default_branch": {"type": ["string", "null"]},
-    "connector_scope": {
+    "report_version": {"const": "0.1.1"},
+    "canonicalization_version": {"const": "1"},
+    "generated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "evidence_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^/\\s]+(?:/[^/\\s]+)?$"
+    },
+    "default_branch": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "run_context": {"$ref": "#/definitions/runContext"},
+    "connector_scope": {"$ref": "#/definitions/connectorScope"},
+    "inventory": {"$ref": "#/definitions/inventory"},
+    "workflows": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "workflow_runs": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/workflowRun"}
+    },
+    "historical_signals": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/historicalSignal"}
+    },
+    "persian_historical_signals": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/historicalSignal"}
+    },
+    "hotspots": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/hotspot"}
+    },
+    "cross_repo_evidence": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/crossRepoEvidence"}
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/limitation"}
+    },
+    "evidence_completeness": {"$ref": "#/definitions/evidenceCompleteness"}
+  },
+  "definitions": {
+    "shaOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "scopeState": {
+      "type": "string",
+      "enum": ["available", "unavailable", "unknown", "not_applicable"]
+    },
+    "completenessStatus": {
+      "type": "string",
+      "enum": ["complete", "bounded", "partial", "unavailable", "unknown", "not_applicable"]
+    },
+    "runContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_name",
+        "tested_sha",
+        "source_head_sha",
+        "base_sha",
+        "ref",
+        "tested_ref_kind",
+        "run_id",
+        "run_attempt"
+      ],
+      "properties": {
+        "event_name": {"type": ["string", "null"], "minLength": 1},
+        "tested_sha": {"$ref": "#/definitions/shaOrNull"},
+        "source_head_sha": {"$ref": "#/definitions/shaOrNull"},
+        "base_sha": {"$ref": "#/definitions/shaOrNull"},
+        "ref": {"type": ["string", "null"], "minLength": 1},
+        "tested_ref_kind": {
+          "type": "string",
+          "enum": ["pull_request_merge", "branch_head", "tag", "other", "unknown"]
+        },
+        "run_id": {"type": ["integer", "null"], "minimum": 1},
+        "run_attempt": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "connectorScope": {
       "type": "object",
       "additionalProperties": false,
       "required": ["files", "pull_requests", "workflow_runs", "artifacts", "related_repositories"],
       "properties": {
-        "files": {"type": "string"},
-        "pull_requests": {"type": "string"},
-        "workflow_runs": {"type": "string"},
-        "artifacts": {"type": "string"},
-        "related_repositories": {"type": "string"}
+        "files": {"$ref": "#/definitions/scopeState"},
+        "pull_requests": {"$ref": "#/definitions/scopeState"},
+        "workflow_runs": {"$ref": "#/definitions/scopeState"},
+        "artifacts": {"$ref": "#/definitions/scopeState"},
+        "related_repositories": {"$ref": "#/definitions/scopeState"}
       }
     },
     "inventory": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["languages", "package_files", "lockfiles", "test_files", "schema_files", "validator_files", "version_files", "docs"],
+      "required": [
+        "file_count",
+        "languages",
+        "package_files",
+        "lockfiles",
+        "test_files",
+        "schema_files",
+        "validator_files",
+        "version_files",
+        "docs"
+      ],
       "properties": {
-        "languages": {"type": "array", "items": {"type": "string"}},
-        "package_files": {"type": "array", "items": {"type": "string"}},
-        "lockfiles": {"type": "array", "items": {"type": "string"}},
-        "test_files": {"type": "array", "items": {"type": "string"}},
-        "schema_files": {"type": "array", "items": {"type": "string"}},
-        "validator_files": {"type": "array", "items": {"type": "string"}},
-        "version_files": {"type": "array", "items": {"type": "string"}},
-        "docs": {"type": "array", "items": {"type": "string"}}
+        "file_count": {"type": "integer", "minimum": 0},
+        "languages": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "package_files": {"$ref": "#/definitions/pathArray"},
+        "lockfiles": {"$ref": "#/definitions/pathArray"},
+        "test_files": {"$ref": "#/definitions/pathArray"},
+        "schema_files": {"$ref": "#/definitions/pathArray"},
+        "validator_files": {"$ref": "#/definitions/pathArray"},
+        "version_files": {"$ref": "#/definitions/pathArray"},
+        "docs": {"$ref": "#/definitions/pathArray"}
       }
     },
-    "workflows": {"type": "array", "items": {"type": "string"}},
-    "workflow_runs": {"type": "array", "items": {"type": "object"}},
-    "historical_signals": {"type": "array", "items": {"type": "object"}},
-    "persian_historical_signals": {"type": "array", "items": {"type": "object"}},
-    "hotspots": {"type": "array", "items": {"type": "object"}},
-    "cross_repo_evidence": {"type": "array", "items": {"type": "object"}},
-    "limitations": {"type": "array", "items": {"type": "string"}},
-    "evidence_completeness": {
+    "pathArray": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "historicalSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "commit_sha", "summary"],
+      "properties": {
+        "source": {"const": "git_log"},
+        "commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "summary": {"type": "string", "minLength": 1}
+      }
+    },
+    "hotspot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "change_count"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "change_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "workflowRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "event", "status", "conclusion", "head_sha", "branch"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "event": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "conclusion": {"type": ["string", "null"], "minLength": 1},
+        "head_sha": {"$ref": "#/definitions/shaOrNull"},
+        "branch": {"type": ["string", "null"], "minLength": 1}
+      }
+    },
+    "crossRepoEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "source", "reference", "summary"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "reference": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1}
+      }
+    },
+    "limitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+        "message": {"type": "string", "minLength": 1}
+      }
+    },
+    "basicCompleteness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reason"],
+      "properties": {
+        "status": {"$ref": "#/definitions/completenessStatus"},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    },
+    "gitCompleteness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "is_shallow",
+        "available_commit_count",
+        "signal_match_limit",
+        "hotspot_commit_limit",
+        "signal_search_truncated"
+      ],
+      "properties": {
+        "status": {"$ref": "#/definitions/completenessStatus"},
+        "reason": {"type": "string", "minLength": 1},
+        "is_shallow": {"type": ["boolean", "null"]},
+        "available_commit_count": {"type": ["integer", "null"], "minimum": 0},
+        "signal_match_limit": {"type": "integer", "minimum": 1},
+        "hotspot_commit_limit": {"type": "integer", "minimum": 1},
+        "signal_search_truncated": {"type": "boolean"}
+      }
+    },
+    "evidenceCompleteness": {
       "type": "object",
       "additionalProperties": false,
       "required": ["static_inventory", "git_history", "workflow_telemetry", "cross_repo", "persian_search"],
       "properties": {
-        "static_inventory": {"type": "string"},
-        "git_history": {"type": "string"},
-        "workflow_telemetry": {"type": "string"},
-        "cross_repo": {"type": "string"},
-        "persian_search": {"type": "string"}
+        "static_inventory": {"$ref": "#/definitions/basicCompleteness"},
+        "git_history": {"$ref": "#/definitions/gitCompleteness"},
+        "workflow_telemetry": {"$ref": "#/definitions/basicCompleteness"},
+        "cross_repo": {"$ref": "#/definitions/basicCompleteness"},
+        "persian_search": {"$ref": "#/definitions/basicCompleteness"}
       }
     }
   }
