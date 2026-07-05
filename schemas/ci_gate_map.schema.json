@@ -3,50 +3,183 @@
   "title": "CI Gate Map",
   "type": "object",
   "additionalProperties": false,
-  "required": ["gate_map_version", "target_repository", "evidence_summary", "proposed_gates", "rejected_gates", "required_checks_recommendation", "owner_permission_required", "limitations"],
+  "required": [
+    "gate_map_version",
+    "target_repository",
+    "evidence_summary",
+    "proposed_gates",
+    "rejected_gates",
+    "deferred_gates",
+    "required_checks_recommendation",
+    "owner_permission_required",
+    "limitations"
+  ],
   "properties": {
-    "gate_map_version": {"type": "string"},
-    "target_repository": {"type": "string"},
-    "evidence_summary": {"type": "array", "items": {"type": "string"}},
+    "gate_map_version": {"const": "0.1.1"},
+    "target_repository": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^/\\s]+/[^/\\s]+$"
+    },
+    "evidence_summary": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
     "proposed_gates": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["gate_id", "name", "failure_mode", "failure_mode_class", "evidence", "workflow_event", "command_or_tool", "files_changed", "estimated_added_seconds", "maintenance_cost", "noise_risk", "priority", "why_meaningful", "owner_explanation_fa"],
-        "properties": {
-          "gate_id": {"type": "string"},
-          "name": {"type": "string"},
-          "failure_mode": {"type": "string"},
-          "failure_mode_class": {"type": "string", "enum": ["historical", "structural", "domain_pattern", "cross_repo", "hypothetical"]},
-          "evidence": {"type": "array", "items": {"type": "string"}},
-          "workflow_event": {"type": "string"},
-          "command_or_tool": {"type": "string"},
-          "files_changed": {"type": "array", "items": {"type": "string"}},
-          "estimated_added_seconds": {"type": "integer", "minimum": 0},
-          "maintenance_cost": {"type": "string", "enum": ["low", "medium", "high"]},
-          "noise_risk": {"type": "string", "enum": ["low", "medium", "high"]},
-          "priority": {"type": "string", "enum": ["critical", "high", "medium", "low", "reject"]},
-          "why_meaningful": {"type": "string"},
-          "owner_explanation_fa": {"type": "string"}
-        }
-      }
+      "items": {"$ref": "#/definitions/proposedGate"}
     },
     "rejected_gates": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["name", "reason", "owner_explanation_fa"],
-        "properties": {
-          "name": {"type": "string"},
-          "reason": {"type": "string"},
-          "owner_explanation_fa": {"type": "string"}
+      "items": {"$ref": "#/definitions/rejectedGate"}
+    },
+    "deferred_gates": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/deferredGate"}
+    },
+    "required_checks_recommendation": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "owner_permission_required": {"type": "boolean"},
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "definitions": {
+    "gateId": {
+      "type": "string",
+      "pattern": "^GATE-[0-9]{3,}$"
+    },
+    "failureModeClass": {
+      "type": "string",
+      "enum": ["historical", "structural", "domain_pattern", "cross_repo", "hypothetical"]
+    },
+    "riskAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_count",
+        "likelihood",
+        "impact",
+        "estimated_added_seconds",
+        "maintenance_cost",
+        "noise_risk",
+        "priority"
+      ],
+      "properties": {
+        "evidence_count": {"type": "integer", "minimum": 0},
+        "likelihood": {"type": "string", "enum": ["low", "medium", "high"]},
+        "impact": {"type": "string", "enum": ["low", "medium", "high"]},
+        "estimated_added_seconds": {"type": "integer", "minimum": 0},
+        "maintenance_cost": {"type": "string", "enum": ["low", "medium", "high"]},
+        "noise_risk": {"type": "string", "enum": ["low", "medium", "high"]},
+        "priority": {"type": "string", "enum": ["critical", "high", "medium", "low"]}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "events",
+        "required_permissions",
+        "runner",
+        "timeout_minutes",
+        "command_or_tool",
+        "files_changed"
+      ],
+      "properties": {
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["pull_request", "push", "workflow_dispatch", "release", "schedule"]
+          }
+        },
+        "required_permissions": {
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_-]*$"},
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["read", "write", "none"]
+          }
+        },
+        "runner": {"type": ["string", "null"], "minLength": 1},
+        "timeout_minutes": {"type": ["integer", "null"], "minimum": 1},
+        "command_or_tool": {"type": "string", "minLength": 1},
+        "files_changed": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
         }
       }
     },
-    "required_checks_recommendation": {"type": "array", "items": {"type": "string"}},
-    "owner_permission_required": {"type": "boolean"},
-    "limitations": {"type": "array", "items": {"type": "string"}}
+    "proposedGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate_id",
+        "name",
+        "failure_mode",
+        "failure_mode_class",
+        "evidence",
+        "execution",
+        "risk_assessment",
+        "why_meaningful",
+        "owner_explanation_fa"
+      ],
+      "properties": {
+        "gate_id": {"$ref": "#/definitions/gateId"},
+        "name": {"type": "string", "minLength": 1},
+        "failure_mode": {"type": "string", "minLength": 1},
+        "failure_mode_class": {"$ref": "#/definitions/failureModeClass"},
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "execution": {"$ref": "#/definitions/execution"},
+        "risk_assessment": {"$ref": "#/definitions/riskAssessment"},
+        "why_meaningful": {"type": "string", "minLength": 1},
+        "owner_explanation_fa": {"type": "string", "minLength": 1}
+      }
+    },
+    "rejectedGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "reason", "owner_explanation_fa"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "owner_explanation_fa": {"type": "string", "minLength": 1}
+      }
+    },
+    "deferredGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate_id",
+        "name",
+        "reason",
+        "required_evidence",
+        "reconsider_when",
+        "owner_explanation_fa"
+      ],
+      "properties": {
+        "gate_id": {"$ref": "#/definitions/gateId"},
+        "name": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "required_evidence": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "reconsider_when": {"type": "string", "minLength": 1},
+        "owner_explanation_fa": {"type": "string", "minLength": 1}
+      }
+    }
   }
 }
