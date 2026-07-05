@@ -1,5 +1,59 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "CI Detective Report",
-  "type": "object"
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["report_version", "generated_at", "repository", "default_branch", "connector_scope", "inventory", "workflows", "workflow_runs", "historical_signals", "persian_historical_signals", "hotspots", "cross_repo_evidence", "limitations", "evidence_completeness"],
+  "properties": {
+    "report_version": {"type": "string"},
+    "generated_at": {"type": "string"},
+    "repository": {"type": "string"},
+    "default_branch": {"type": ["string", "null"]},
+    "connector_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "pull_requests", "workflow_runs", "artifacts", "related_repositories"],
+      "properties": {
+        "files": {"type": "string"},
+        "pull_requests": {"type": "string"},
+        "workflow_runs": {"type": "string"},
+        "artifacts": {"type": "string"},
+        "related_repositories": {"type": "string"}
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["languages", "package_files", "lockfiles", "test_files", "schema_files", "validator_files", "version_files", "docs"],
+      "properties": {
+        "languages": {"type": "array", "items": {"type": "string"}},
+        "package_files": {"type": "array", "items": {"type": "string"}},
+        "lockfiles": {"type": "array", "items": {"type": "string"}},
+        "test_files": {"type": "array", "items": {"type": "string"}},
+        "schema_files": {"type": "array", "items": {"type": "string"}},
+        "validator_files": {"type": "array", "items": {"type": "string"}},
+        "version_files": {"type": "array", "items": {"type": "string"}},
+        "docs": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "workflows": {"type": "array", "items": {"type": "string"}},
+    "workflow_runs": {"type": "array", "items": {"type": "object"}},
+    "historical_signals": {"type": "array", "items": {"type": "object"}},
+    "persian_historical_signals": {"type": "array", "items": {"type": "object"}},
+    "hotspots": {"type": "array", "items": {"type": "object"}},
+    "cross_repo_evidence": {"type": "array", "items": {"type": "object"}},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "evidence_completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["static_inventory", "git_history", "workflow_telemetry", "cross_repo", "persian_search"],
+      "properties": {
+        "static_inventory": {"type": "string"},
+        "git_history": {"type": "string"},
+        "workflow_telemetry": {"type": "string"},
+        "cross_repo": {"type": "string"},
+        "persian_search": {"type": "string"}
+      }
+    }
+  }
 }
