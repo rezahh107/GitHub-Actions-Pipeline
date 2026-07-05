@@ -46,6 +46,15 @@ jobs:
           CI_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: python tools/ci_detective.py --repo-root . --out "$RUNNER_TEMP/ci_detective_report.json"
 
+      - name: Check Scope Claim Audit examples
+        run: |
+          python tools/scope_claim_audit.py --check examples/scope_claim_audit.example.json
+          python tools/scope_claim_audit.py --check examples/scope_claim_audit.true-negative.example.json
+          python tools/scope_claim_audit.py --check examples/scope_claim_audit.ambiguous.example.json
+
+      - name: Generate Scope Claim Audit summary
+        run: python tools/scope_claim_audit.py --input examples/scope_claim_audit.example.json --out "$RUNNER_TEMP/scope_claim_audit.summary.md"
+
       - name: Write run summary
         run: |
           echo "## GitHub Actions Pipeline validation" >> "$GITHUB_STEP_SUMMARY"
@@ -54,6 +63,8 @@ jobs:
           echo "- Tested SHA: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Source head SHA: \`${{ github.event.pull_request.head.sha || github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- CI detective report generated as an artifact." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Scope Claim Audit examples checked." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Scope Claim Audit advisory summary generated as an artifact." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload CI detective report
         # actions/upload-artifact v4.6.2
@@ -61,5 +72,14 @@ jobs:
         with:
           name: ci-detective-report
           path: ${{ runner.temp }}/ci_detective_report.json
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload Scope Claim Audit summary
+        # actions/upload-artifact v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scope-claim-audit-summary
+          path: ${{ runner.temp }}/scope_claim_audit.summary.md
           retention-days: 14
           if-no-files-found: error
