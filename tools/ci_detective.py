@@ -27,7 +27,43 @@ LANGUAGE_BY_SUFFIX = {
     ".yaml": "YAML",
     ".php": "PHP",
     ".toml": "TOML",
+    ".go": "Go",
+    ".rs": "Rust",
+    ".rb": "Ruby",
+    ".cs": "C#",
+    ".java": "Java",
+    ".sh": "Shell",
+    ".html": "HTML",
+    ".css": "CSS",
 }
+
+ENGLISH_SIGNAL_KEYWORDS = [
+    "fix",
+    "bug",
+    "revert",
+    "regression",
+    "hotfix",
+    "broken",
+    "fail",
+    "failure",
+    "repair",
+    "patch",
+]
+
+PERSIAN_SIGNAL_KEYWORDS = [
+    "رفع",
+    "اصلاح",
+    "باگ",
+    "خرابی",
+    "خراب",
+    "شکست",
+    "ناموفق",
+    "بازگشت",
+    "برگشت",
+    "رگرسیون",
+    "تعمیر",
+    "پچ",
+]
 
 PACKAGE_FILES = {"pyproject.toml", "package.json", "composer.json", "Cargo.toml", "go.mod"}
 LOCKFILES = {"package-lock.json", "pnpm-lock.yaml", "yarn.lock", "poetry.lock", "uv.lock", "Pipfile.lock", "composer.lock"}
@@ -66,25 +102,37 @@ def run_git(root: Path, args: list[str]) -> tuple[bool, str]:
     return True, result.stdout.strip()
 
 
-def collect_git_signals(root: Path) -> tuple[list[dict], list[dict], list[str], str]:
-    english = "fix|bug|revert|regression|hotfix|broken|fail|failure|repair|patch"
-    persian = "رفع|اصلاح|باگ|خرابی|خراب|شکست|ناموفق|بازگشت|برگشت|رگرسیون|تعمیر|پچ"
+def _git_log_grep_args(keywords: list[str]) -> list[str]:
+    args = ["log", "--oneline", "-i", "-n", "25"]
+    for keyword in keywords:
+        args.append(f"--grep={keyword}")
+    return args
 
+
+def _parse_git_log_lines(output: str) -> list[dict]:
+    return [
+        {"source": "git_log", "summary": line}
+        for line in output.splitlines()
+        if line.strip()
+    ]
+
+
+def collect_git_signals(root: Path) -> tuple[list[dict], list[dict], list[str], str]:
     historical: list[dict] = []
     persian_signals: list[dict] = []
     limitations: list[str] = []
 
-    ok, out = run_git(root, ["log", "--oneline", "-i", f"--grep={english}", "-n", "25"])
+    ok, out = run_git(root, _git_log_grep_args(ENGLISH_SIGNAL_KEYWORDS))
     if ok and out:
-        for line in out.splitlines():
-            historical.append({"source": "git_log", "summary": line})
+        historical.extend(_parse_git_log_lines(out))
     elif not ok:
         limitations.append(f"git history unavailable: {out}")
 
-    ok, out = run_git(root, ["log", "--oneline", "-i", f"--grep={persian}", "-n", "25"])
+    ok, out = run_git(root, _git_log_grep_args(PERSIAN_SIGNAL_KEYWORDS))
     if ok and out:
-        for line in out.splitlines():
-            persian_signals.append({"source": "git_log", "summary": line})
+        persian_signals.extend(_parse_git_log_lines(out))
+    elif not ok and not limitations:
+        limitations.append(f"git history unavailable: {out}")
 
     completeness = "complete" if (root / ".git").exists() else "unavailable"
     return historical, persian_signals, limitations, completeness
@@ -101,21 +149,34 @@ def collect_hotspots(root: Path) -> list[dict]:
     ]
 
 
+def is_test_file(path: str) -> bool:
+    name = Path(path).name.lower()
+    lowered = path.lower()
+    return (
+        name.startswith("test_")
+        or name.endswith("_test.py")
+        or ".test." in lowered
+        or ".spec." in lowered
+        or "/tests/" in f"/{lowered}"
+        or "/test/" in f"/{lowered}"
+    )
+
+
 def build_report(repo_root: Path) -> dict:
     repo_root = repo_root.resolve()
     files = list(iter_files(repo_root))
 
     rel_files = [rel(repo_root, p) for p in files]
-    languages = sorted({LANGUAGE_BY_SUFFIX[p.suffix] for p in files if p.suffix in LANGUAGE_BY_SUFFIX})
+    languages = sorted({LANGUAGE_BY_SUFFIX[p.suffix.lower()] for p in files if p.suffix.lower() in LANGUAGE_BY_SUFFIX})
 
     package_files = sorted(p for p in rel_files if Path(p).name in PACKAGE_FILES)
     lockfiles = sorted(p for p in rel_files if Path(p).name in LOCKFILES)
-    test_files = sorted(p for p in rel_files if "/test" in f"/{p}" or Path(p).name.startswith("test_"))
-    schema_files = sorted(p for p in rel_files if "schema" in p.lower() and p.endswith(".json"))
-    validator_files = sorted(p for p in rel_files if "valid" in p.lower() and p.endswith(".py"))
+    test_files = sorted(p for p in rel_files if is_test_file(p))
+    schema_files = sorted(p for p in rel_files if "schema" in p.lower() and p.lower().endswith(".json"))
+    validator_files = sorted(p for p in rel_files if "valid" in p.lower() and p.lower().endswith(".py"))
     version_files = sorted(p for p in rel_files if Path(p).name in VERSION_FILES)
     docs = sorted(p for p in rel_files if Path(p).name in DOC_NAMES or p.startswith("pipeline/"))
-    workflows = sorted(p for p in rel_files if p.startswith(".github/workflows/") and (p.endswith(".yml") or p.endswith(".yaml")))
+    workflows = sorted(p for p in rel_files if p.startswith(".github/workflows/") and p.lower().endswith((".yml", ".yaml")))
 
     historical, persian_signals, limitations, git_completeness = collect_git_signals(repo_root)
     hotspots = collect_hotspots(repo_root)
