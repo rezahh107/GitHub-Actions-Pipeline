@@ -140,12 +140,12 @@ def build_report(
         for path in rel_files
         if path.split('/')[-1] in DOC_NAMES or path.startswith("pipeline/")
     ]
-    workflows = sorted(
+    workflows = [
         path
         for path in rel_files
         if path.startswith(".github/workflows/")
         and path.lower().endswith((".yml", ".yaml"))
-    )
+    ]
 
     (
         historical,
