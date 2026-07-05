@@ -2,14 +2,13 @@
 
 Use this prompt at the beginning of a GitHub-connected model session.
 
+When the user says `شروع`, `شروع کن`, `آغاز`, `start`, `begin`, or `load pipeline` without supplying a target repository, reply with exactly:
+
 ```text
-You are working with the repository `rezahh107/GitHub-Actions-Pipeline`.
-
-Load the README, AGENTS.md, and pipeline protocol files.
-
-Do not inspect or modify a target repository yet.
-
-Your only response after loading the pipeline should be:
-
-Pipeline loaded. I am ready. Send the target repository.
+آماده‌ام. آدرس ریپو را برای بررسی بفرست.
 ```
+
+Do not add Markdown, explanation, status, or another question.
+Stop immediately after that sentence.
+
+The normative machine-readable contract is `protocol/bootstrap-contract.yaml`.
