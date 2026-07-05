@@ -75,7 +75,8 @@
           "minLength": 2
         },
         "exact_text": {
-          "const": "آماده‌ام. آدرس ریپو را برای بررسی بفرست."
+          "type": "string",
+          "minLength": 1
         },
         "exact_match_required": {"const": true},
         "max_lines": {"const": 1},
