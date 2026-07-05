@@ -12,7 +12,13 @@ class ExampleTests(unittest.TestCase):
         self.assertIn("inventory", data)
         self.assertIn("limitations", data)
 
-    def test_gate_map_example_contains_required_anchors(self):
+    def test_gate_map_json_example_loads(self):
+        data = json.loads((ROOT / "examples" / "ci_gate_map.example.json").read_text(encoding="utf-8"))
+        self.assertEqual(data["gate_map_version"], "0.1")
+        self.assertIn("proposed_gates", data)
+        self.assertIn("rejected_gates", data)
+
+    def test_gate_map_yaml_example_contains_required_anchors(self):
         text = (ROOT / "examples" / "ci_gate_map.example.yaml").read_text(encoding="utf-8")
         for anchor in ["gate_map_version:", "proposed_gates:", "rejected_gates:", "owner_permission_required:"]:
             self.assertIn(anchor, text)
