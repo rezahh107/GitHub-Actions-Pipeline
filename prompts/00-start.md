@@ -1,14 +1,11 @@
 # 00 — Start Prompt
 
-Use this prompt at the beginning of a GitHub-connected model session.
+Contract source: `protocol/start.yaml`
 
-When the user says `شروع`, `شروع کن`, `آغاز`, `start`, `begin`, or `load pipeline` without supplying a target repository, reply with exactly:
+Registered trigger examples: `شروع`, `شروع کن`, `آغاز`, `start`, `begin`, `load pipeline`.
 
-```text
-آماده‌ام. آدرس ریپو را برای بررسی بفرست.
-```
+Condition: no target repository is present in the same message.
 
-Do not add Markdown, explanation, status, or another question.
-Stop immediately after that sentence.
+Canonical response: `آماده‌ام. آدرس ریپو را برای بررسی بفرست.`
 
-The normative machine-readable contract is `protocol/bootstrap-contract.yaml`.
+Output shape: Persian, exact match, one line, no supplementary text.
