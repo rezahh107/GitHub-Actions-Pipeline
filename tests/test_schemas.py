@@ -7,7 +7,10 @@ from pathlib import Path
 
 from jsonschema import Draft7Validator, ValidationError
 
+from tools.ci_detective import compute_evidence_sha256
+
 ROOT = Path(__file__).resolve().parents[1]
+FIXED_TIME = "2026-07-05T00:00:00Z"
 
 
 def load_json(path: Path):
@@ -21,10 +24,11 @@ class SchemaValidationTests(unittest.TestCase):
                 schema = load_json(path)
                 Draft7Validator.check_schema(schema)
 
-    def test_ci_detective_example_validates_against_schema(self):
+    def test_ci_detective_example_validates_and_hash_matches(self):
         schema = load_json(ROOT / "schemas" / "ci_detective_report.schema.json")
         instance = load_json(ROOT / "examples" / "ci_detective_report.example.json")
         Draft7Validator(schema).validate(instance)
+        self.assertEqual(instance["evidence_sha256"], compute_evidence_sha256(instance))
 
     def test_gate_map_json_example_validates_against_schema(self):
         schema = load_json(ROOT / "schemas" / "ci_gate_map.schema.json")
@@ -36,29 +40,50 @@ class SchemaValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "ci_detective_report.json"
             subprocess.run(
-                [sys.executable, "tools/ci_detective.py", "--repo-root", ".", "--out", str(output)],
+                [
+                    sys.executable,
+                    "tools/ci_detective.py",
+                    "--repo-root",
+                    ".",
+                    "--out",
+                    str(output),
+                    "--generated-at",
+                    FIXED_TIME,
+                ],
                 cwd=ROOT,
                 check=True,
             )
-            Draft7Validator(schema).validate(load_json(output))
+            instance = load_json(output)
+            Draft7Validator(schema).validate(instance)
+            self.assertEqual(instance["evidence_sha256"], compute_evidence_sha256(instance))
 
-    def test_schema_rejects_missing_required_field(self):
+    def test_gate_map_schema_rejects_missing_deferred_gates(self):
         schema = load_json(ROOT / "schemas" / "ci_gate_map.schema.json")
         instance = load_json(ROOT / "examples" / "ci_gate_map.example.json")
-        instance.pop("target_repository")
+        instance.pop("deferred_gates")
         with self.assertRaises(ValidationError):
             Draft7Validator(schema).validate(instance)
 
-    def test_schema_rejects_unexpected_top_level_property(self):
+    def test_detective_schema_rejects_unexpected_hotspot_shape(self):
         schema = load_json(ROOT / "schemas" / "ci_detective_report.schema.json")
         instance = load_json(ROOT / "examples" / "ci_detective_report.example.json")
-        instance["unexpected"] = True
+        instance["hotspots"][0] = {
+            "path": "schemas/review.schema.json",
+            "reason": "legacy loose example",
+        }
         with self.assertRaises(ValidationError):
             Draft7Validator(schema).validate(instance)
 
-    def test_schema_rejects_invalid_enum_value(self):
+    def test_detective_schema_rejects_invalid_sha(self):
+        schema = load_json(ROOT / "schemas" / "ci_detective_report.schema.json")
+        instance = load_json(ROOT / "examples" / "ci_detective_report.example.json")
+        instance["run_context"]["tested_sha"] = "not-a-sha"
+        with self.assertRaises(ValidationError):
+            Draft7Validator(schema).validate(instance)
+
+    def test_gate_map_schema_rejects_reject_priority_for_proposed_gate(self):
         schema = load_json(ROOT / "schemas" / "ci_gate_map.schema.json")
         instance = load_json(ROOT / "examples" / "ci_gate_map.example.json")
-        instance["proposed_gates"][0]["priority"] = "urgent"
+        instance["proposed_gates"][0]["risk_assessment"]["priority"] = "reject"
         with self.assertRaises(ValidationError):
             Draft7Validator(schema).validate(instance)
