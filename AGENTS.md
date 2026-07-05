@@ -113,6 +113,12 @@ Prefer:
 - simple workflow files;
 - branch-based reversible implementation.
 
+## Scope Claim Audit Rule
+
+Scope Claim Audit separates deterministic diff facts from interpretive claim classification. A mismatch or under-reported signal is advisory by default and should feed review attention or future CI Gate Map design, not automatic rejection.
+
+Do not treat a Scope Claim Audit result as enforced unless the target repository has a real wired enforcement gate and the audit package declares `enforcement_mode: enforced` with non-null `wired_enforcement_gate` metadata.
+
 ## Evidence Rules
 
 The agent must separate:
