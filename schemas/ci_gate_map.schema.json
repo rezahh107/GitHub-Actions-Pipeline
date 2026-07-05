@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CI Gate Map",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["gate_map_version", "target_repository", "evidence_summary", "proposed_gates", "rejected_gates", "required_checks_recommendation", "owner_permission_required", "limitations"],
+  "properties": {
+    "gate_map_version": {"type": "string"},
+    "target_repository": {"type": "string"},
+    "evidence_summary": {"type": "array", "items": {"type": "string"}},
+    "proposed_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["gate_id", "name", "failure_mode", "failure_mode_class", "evidence", "workflow_event", "command_or_tool", "files_changed", "estimated_added_seconds", "maintenance_cost", "noise_risk", "priority", "why_meaningful", "owner_explanation_fa"],
+        "properties": {
+          "gate_id": {"type": "string"},
+          "name": {"type": "string"},
+          "failure_mode": {"type": "string"},
+          "failure_mode_class": {"type": "string", "enum": ["historical", "structural", "domain_pattern", "cross_repo", "hypothetical"]},
+          "evidence": {"type": "array", "items": {"type": "string"}},
+          "workflow_event": {"type": "string"},
+          "command_or_tool": {"type": "string"},
+          "files_changed": {"type": "array", "items": {"type": "string"}},
+          "estimated_added_seconds": {"type": "integer", "minimum": 0},
+          "maintenance_cost": {"type": "string", "enum": ["low", "medium", "high"]},
+          "noise_risk": {"type": "string", "enum": ["low", "medium", "high"]},
+          "priority": {"type": "string", "enum": ["critical", "high", "medium", "low", "reject"]},
+          "why_meaningful": {"type": "string"},
+          "owner_explanation_fa": {"type": "string"}
+        }
+      }
+    },
+    "rejected_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "reason", "owner_explanation_fa"],
+        "properties": {
+          "name": {"type": "string"},
+          "reason": {"type": "string"},
+          "owner_explanation_fa": {"type": "string"}
+        }
+      }
+    },
+    "required_checks_recommendation": {"type": "array", "items": {"type": "string"}},
+    "owner_permission_required": {"type": "boolean"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}
