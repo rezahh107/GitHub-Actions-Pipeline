@@ -123,17 +123,17 @@ def build_report(
     )
     package_files = sorted(path for path in rel_files if Path(path).name in PACKAGE_FILES)
     lockfiles = sorted(path for path in rel_files if Path(path).name in LOCKFILES)
-    test_files = sorted(path for path in rel_files if is_test_file(path))
-    schema_files = sorted(
+    test_files = [path for path in rel_files if is_test_file(path)]
+    schema_files = [
         path
         for path in rel_files
         if "schema" in path.lower() and path.lower().endswith(".json")
-    )
-    validator_files = sorted(
+    ]
+    validator_files = [
         path
         for path in rel_files
         if "valid" in path.lower() and path.lower().endswith(".py")
-    )
+    ]
     version_files = sorted(path for path in rel_files if Path(path).name in VERSION_FILES)
     docs = sorted(
         path
