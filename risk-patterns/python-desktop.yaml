@@ -1,0 +1,46 @@
+project_type: python-desktop
+detection_signals:
+- signal: PySide6, PyQt, Tkinter, wxPython, or similar GUI dependency in project metadata
+- signal: desktop entrypoint such as main.py, app.py, or a console_scripts/gui_scripts declaration
+- signal: resource directories such as assets/, icons/, ui/, qml/, or *.qrc files
+risk_patterns:
+- id: clean-env-bootstrap-failure
+  description: Application import or bootstrap fails in a clean environment because dependencies, paths,
+    or startup assumptions are incomplete.
+  typical_trigger: Developer machine has implicit packages or working-directory state that CI and fresh
+    installs do not have.
+  detectability: easy
+  suggested_gate: Create a clean virtual environment, install the package or requirements, and run a smoke
+    import of the documented app entrypoint.
+- id: resource-relative-path-breakage
+  description: Resource files load only from one working directory because paths are relative to cwd instead
+    of the module or package location.
+  typical_trigger: The app is launched from a shortcut, packaged executable, or test runner with a different
+    cwd.
+  detectability: medium
+  suggested_gate: Smoke test starts the entrypoint from a temporary cwd and asserts required assets/icons/ui
+    files resolve through package-relative paths.
+- id: headless-gui-import-failure
+  description: GUI modules fail to import in CI because the import path initializes display-dependent GUI
+    state.
+  typical_trigger: Top-level code creates QApplication, Tk root windows, or loads platform plugins during
+    module import.
+  detectability: medium
+  suggested_gate: Headless CI test imports GUI modules without starting the event loop and fails on display/plugin
+    initialization errors.
+- id: cli-entrypoint-failure
+  description: Documented CLI or launcher entrypoint exits before showing help or starting the application.
+  typical_trigger: Entry point is renamed, argument parser breaks, or package metadata points to a removed
+    function.
+  detectability: easy
+  suggested_gate: Run the declared console_scripts/gui_scripts command with --help or a non-interactive
+    smoke flag and require exit code 0.
+- id: packaging-tool-drift
+  description: PyInstaller or similar packaging configuration no longer includes modules, resources, or
+    metadata needed by the desktop app.
+  typical_trigger: New assets or hidden imports are added but the spec/build config is not updated.
+  detectability: hard
+  suggested_gate: If packaging config exists, run the documented package/build command or a lightweight
+    spec validation and assert expected output paths are produced.
+notes: Use this pattern only when repository evidence indicates a GUI desktop application, not a generic
+  Python package.
