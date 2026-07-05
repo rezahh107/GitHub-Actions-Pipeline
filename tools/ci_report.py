@@ -121,8 +121,8 @@ def build_report(
             if path.suffix.lower() in LANGUAGE_BY_SUFFIX
         }
     )
-    package_files = sorted(path for path in rel_files if Path(path).name in PACKAGE_FILES)
-    lockfiles = sorted(path for path in rel_files if Path(path).name in LOCKFILES)
+    package_files = [path for path in rel_files if path.split('/')[-1] in PACKAGE_FILES]
+    lockfiles = [path for path in rel_files if path.split('/')[-1] in LOCKFILES]
     test_files = [path for path in rel_files if is_test_file(path)]
     schema_files = [
         path
