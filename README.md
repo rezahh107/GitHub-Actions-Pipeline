@@ -12,8 +12,8 @@ Next input: target repository URL or `owner/repository`.
 
 ## References
 
+- Start entry: `START.md`
 - Start contract: `protocol/start.yaml`
 - Start schema: `schemas/start.schema.json`
 - Start tests: `tests/test_start_protocol.py`
 - Full project reference: `docs/project-reference.md`
-- Agent operating policy: `docs/agent-operating-policy.md`
