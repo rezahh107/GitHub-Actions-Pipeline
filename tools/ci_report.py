@@ -108,11 +108,8 @@ def build_report(
 ) -> dict[str, object]:
     environment = os.environ if environ is None else environ
     repo_root = repo_root.resolve()
-    files = sorted(
-        iter_files(repo_root, excluded_paths=excluded_paths),
-        key=lambda path: rel(repo_root, path),
-    )
-    rel_files = [rel(repo_root, path) for path in files]
+    files = list(iter_files(repo_root, excluded_paths=excluded_paths))
+    rel_files = sorted(rel(repo_root, path) for path in files)
 
     languages = sorted(
         {
