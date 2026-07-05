@@ -134,7 +134,7 @@ def build_report(
         for path in rel_files
         if "valid" in path.lower() and path.lower().endswith(".py")
     ]
-    version_files = sorted(path for path in rel_files if Path(path).name in VERSION_FILES)
+    version_files = [path for path in rel_files if path.split('/')[-1] in VERSION_FILES]
     docs = sorted(
         path
         for path in rel_files
