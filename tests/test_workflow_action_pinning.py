@@ -47,7 +47,9 @@ class WorkflowActionPinningTests(unittest.TestCase):
     def test_external_github_actions_are_pinned_to_full_length_shas(self):
         workflows = workflow_files()
         self.assertTrue(workflows, "No workflow files found to scan. Check WORKFLOW_DIR path.")
-
+    def test_external_github_actions_are_pinned_to_full_length_shas(self):
+        workflows = workflow_files()
+        self.assertTrue(workflows, "No workflow files found to scan. Check WORKFLOW_DIR path.")
         failures = []
         for workflow in workflows:
             relative = workflow.relative_to(ROOT).as_posix()
