@@ -20,12 +20,36 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Checkout
+      - name: Checkout exact source head
         # actions/checkout v4.2.2
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Verify exact source-head checkout
+        shell: bash
+        env:
+          EXPECTED_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tested_sha="$(git rev-parse HEAD)"
+          sha_pattern='^[0-9a-f]{40}$'
+          if [[ ! "$EXPECTED_SOURCE_HEAD_SHA" =~ $sha_pattern ]] || [[ ! "$tested_sha" =~ $sha_pattern ]]; then
+            printf '%s\n' 'Expected and tested identities must be lowercase 40-character Git SHAs.' >&2
+            exit 2
+          fi
+          if [[ "$tested_sha" != "$EXPECTED_SOURCE_HEAD_SHA" ]]; then
+            printf 'Exact source-head mismatch: expected %s, checked out %s.\n' "$EXPECTED_SOURCE_HEAD_SHA" "$tested_sha" >&2
+            exit 3
+          fi
+          {
+            printf 'TESTED_SHA=%s\n' "$tested_sha"
+            printf 'SOURCE_HEAD_SHA=%s\n' "$EXPECTED_SOURCE_HEAD_SHA"
+            printf 'EVENT_SHA=%s\n' "$EVENT_SHA"
+          } >> "$GITHUB_ENV"
 
       - name: Set up Python
         # actions/setup-python v5.6.0
@@ -104,8 +128,7 @@ jobs:
       - name: Write run summary and identity
         shell: bash
         env:
-          TESTED_SHA: ${{ github.sha }}
-          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXACT_SOURCE_HEAD_REQUIRED: "1"
           RUN_IDENTITY_OUT: ${{ runner.temp }}/run-identity.json
         run: bash tools/render_workflow_summary.sh
 
