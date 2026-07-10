@@ -39,12 +39,28 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests
 
-      - name: Generate CI detective report
+      - name: Generate legacy CI detective report
         env:
           CI_SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           CI_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
           CI_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: python tools/ci_detective.py --repo-root . --out "$RUNNER_TEMP/ci_detective_report.json"
+
+      - name: Generate Minimal Safe CI report
+        run: |
+          python tools/repository_upgrade.py \
+            --repo-root . \
+            --repository "${{ github.repository }}" \
+            --mode minimal-safe-ci \
+            --out "$RUNNER_TEMP/repository_upgrade.minimal.json"
+
+      - name: Generate Deep Repository Upgrade report
+        run: |
+          python tools/repository_upgrade.py \
+            --repo-root . \
+            --repository "${{ github.repository }}" \
+            --mode deep-repository-upgrade \
+            --out "$RUNNER_TEMP/repository_upgrade.deep.json"
 
       - name: Check Scope Claim Audit examples
         run: |
@@ -59,19 +75,23 @@ jobs:
         run: |
           echo "## GitHub Actions Pipeline validation" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Unit tests completed." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Tested SHA: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Source head SHA: \`${{ github.event.pull_request.head.sha || github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- CI detective report generated as an artifact." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Scope Claim Audit examples checked." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Scope Claim Audit advisory summary generated as an artifact." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Unit and negative schema tests completed." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tested SHA: `${{ github.sha }}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source head SHA: `${{ github.event.pull_request.head.sha || github.sha }}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Legacy CI detective report generated." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Minimal Safe CI report generated." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Deep Repository Upgrade report generated." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Remote workflow telemetry was not requested by this validation job." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload CI detective report
+      - name: Upload repository analysis reports
         # actions/upload-artifact v4.6.2
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: ci-detective-report
-          path: ${{ runner.temp }}/ci_detective_report.json
+          name: repository-analysis-reports
+          path: |
+            ${{ runner.temp }}/ci_detective_report.json
+            ${{ runner.temp }}/repository_upgrade.minimal.json
+            ${{ runner.temp }}/repository_upgrade.deep.json
           retention-days: 14
           if-no-files-found: error
 

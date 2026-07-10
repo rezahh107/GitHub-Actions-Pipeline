@@ -1,0 +1,33 @@
+{
+  "fixture_version": "1.0.0",
+  "scenarios": [
+    {
+      "description": "Fresh Python CLI with tests but no CI or lockfile.",
+      "files": {
+        "app/cli.py": "def main() -> int:\n    return 0\n",
+        "pyproject.toml": "[project]\nname = \"cold-start-cli\"\nversion = \"0.1.0\"\ndependencies = []\n[project.scripts]\ncold-start = \"app.cli:main\"\n[build-system]\nbuild-backend = \"setuptools.build_meta\"\n",
+        "tests/test_cli.py": "import unittest\n\nclass CLITests(unittest.TestCase):\n    def test_invalid(self):\n        with self.assertRaises(ValueError):\n            raise ValueError('invalid')\n"
+      },
+      "scenario_id": "cold-start-python-cli"
+    },
+    {
+      "description": "Python package with deterministic install, tests, and build in pull-request CI.",
+      "files": {
+        ".github/workflows/validate.yml": "name: Validate\non: [pull_request]\npermissions:\n  contents: read\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - run: python -m pip install -r requirements.lock\n      - run: python -m unittest discover -s tests\n      - run: python -m build\n",
+        "pyproject.toml": "[project]\nname = \"operational-package\"\nversion = \"0.1.0\"\ndependencies = []\n[build-system]\nbuild-backend = \"setuptools.build_meta\"\n",
+        "requirements.lock": "build==1.2.2\n",
+        "tests/test_package.py": "import unittest\n\nclass PackageTests(unittest.TestCase):\n    def test_ok(self):\n        self.assertTrue(True)\n"
+      },
+      "scenario_id": "operational-python-package"
+    },
+    {
+      "description": "Schema and examples exist without operational validation.",
+      "files": {
+        "README.md": "# Contract repository\n",
+        "examples/item.json": "{\"id\":\"a\"}\n",
+        "schemas/item.schema.json": "{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"additionalProperties\":false,\"required\":[\"id\"],\"properties\":{\"id\":{\"type\":\"string\"}}}\n"
+      },
+      "scenario_id": "contract-repository"
+    }
+  ]
+}

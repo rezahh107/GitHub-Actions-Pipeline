@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0
+
+- Add explicit `minimal-safe-ci` and `deep-repository-upgrade` policy modes.
+- Add an executable repository model with manifest, workflow, command, component, test, schema, validator, release, and capability evidence.
+- Add optional read-only GitHub Actions telemetry and explicit unavailable fallbacks.
+- Add structural Git-history analysis beyond commit-message keywords.
+- Add independent observed-failure, structural-invariant, and baseline-capability recommendation channels.
+- Add cold-start handling and composable capability profiles.
+- Add bounded ordinal high-leverage ranking and staged Phase 1/Phase 2 output.
+- Add closed v1 schemas, positive examples, malformed-input tests, fixtures, and actionable diagnostics.
+- Preserve the `ci_detective` report `0.1.1` as a backward-compatible contract.
+
 ## 0.1.1
 
 - Prevent shallow Git history from being reported as complete.
