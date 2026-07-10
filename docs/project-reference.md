@@ -24,6 +24,20 @@ repository evidence
   → explicit recipe-bound implementation when separately authorized
 ```
 
+## Pipeline Phases
+
+1. Validate the explicit operating mode and repository root.
+2. Collect bounded file, manifest, workspace, workflow, and command evidence.
+3. Resolve supported Python AST and package-script semantics without guessing dynamic behavior.
+4. Build components, relationships, critical paths, and capability states with evidence.
+5. Detect and compose profiles while preserving conflicts.
+6. Collect bounded structural history and optional read-only telemetry.
+7. Generate independent observed-failure, structural-invariant, and baseline-capability recommendations.
+8. Rank recommendations with the versioned ordinal policy and factor-level rationale.
+9. Produce a minimal plan or staged deep upgrade plus a dry-run implementation package.
+10. Apply only explicitly allowlisted recipes under exact-HEAD and clean-worktree guards.
+11. Validate on the exact resulting SHA and record outcomes separately for review-only profile evolution.
+
 ## Current deterministic capabilities
 
 - JSON, TOML, and YAML configuration parsing;

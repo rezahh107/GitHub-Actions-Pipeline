@@ -4,6 +4,14 @@ Current version: `0.3.0`.
 
 This repository is an evidence-first repository intelligence and staged-improvement engine. GitHub Actions remains one enforcement surface, not the whole product.
 
+## Start contract
+
+Start trigger: `شروع`
+
+Canonical response: `آماده‌ام. آدرس ریپو را برای بررسی بفرست.`
+
+Visible entry and contract sources: `START.md` and `protocol/start.yaml`.
+
 ## Operating modes
 
 ### `minimal-safe-ci`
@@ -116,6 +124,8 @@ python tools/repository_upgrade.py --repo-root . --mode deep-repository-upgrade 
 
 ## Documentation
 
+- Start entry: `START.md`
+- Start contract: `protocol/start.yaml`
 - Architecture and extension guide: `docs/repository-upgrade.md`
 - Canonical implementation tracker: `docs/DEEP_REPOSITORY_UPGRADE_STATUS.md`
 - Deep protocol: `pipeline/09-deep-repository-upgrade.md`
