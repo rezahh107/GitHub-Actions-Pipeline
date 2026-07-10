@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Load GitHub Actions workflows with an isolated YAML 1.2 boolean resolver so YAML 1.1 words such as `yes`, `no`, `on`, and `off` remain text and unsupported explicit boolean tags fail closed.
 - Gate workflow command evidence through a versioned execution-eligibility model: literal-false jobs/steps are inert, dynamic conditions remain unresolved, and steps mixing `run` with `uses` cannot establish operational capability.
 - Preserve NUL-framed Git metadata and filename streams byte-for-byte through collection; decode individual fields strictly without trimming leading or trailing filename whitespace.
 - Reject repository symlink files and symlinked parents before metadata/content reads, constrain workspace patterns to bounded contained relative paths, and emit stable path diagnostics without serializing external content.
