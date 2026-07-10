@@ -24,7 +24,7 @@ not_applicable
 | 2 | Repository model | verified | `tools/ci_repository_model.py` | repository-model capability-state tests |
 | 3 | Deeper collector | verified | manifest, TOML/JSON/YAML, workflow, command, component, schema/test/release collectors | `test_repository_model_distinguishes_nominal_from_operational` |
 | 4 | Workflow telemetry | verified | `tools/ci_telemetry.py`; optional API or offline snapshot; explicit fallback | telemetry fake-transport and unavailable tests |
-| 5 | Evidence mining beyond keywords | implemented_unverified | `tools/ci_history_analysis.py` | bounded deterministic structural-history code and generated deep-report schema tests |
+| 5 | Evidence mining beyond keywords | verified | `tools/ci_history_analysis.py` | real temporary-Git fixture covers reverts, co-change, production-without-test, and repeated fixes |
 | 6 | Three recommendation sources | verified | `tools/ci_recommendations.py` | channel assertions and schema enum |
 | 7 | Cold-start handling | verified | `tools/ci_upgrade_engine.py::_cold_start_state` | cold-start fixture test |
 | 8 | Composable profiles | verified | `profiles/capability-profiles.v1.json`, `tools/ci_profiles.py` | profile schema and composition tests |
@@ -45,7 +45,7 @@ Executed before repository write:
 
 ```text
 python -m unittest tests.test_repository_upgrade tests.test_repository_upgrade_schemas -v
-Ran 19 tests
+Ran 20 tests
 OK
 ```
 
