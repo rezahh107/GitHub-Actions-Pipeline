@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Gate workflow command evidence through a versioned execution-eligibility model: literal-false jobs/steps are inert, dynamic conditions remain unresolved, and steps mixing `run` with `uses` cannot establish operational capability.
+- Preserve NUL-framed Git metadata and filename streams byte-for-byte through collection; decode individual fields strictly without trimming leading or trailing filename whitespace.
 - Reject repository symlink files and symlinked parents before metadata/content reads, constrain workspace patterns to bounded contained relative paths, and emit stable path diagnostics without serializing external content.
 - Require behavioral command modes, structurally runnable GitHub Actions jobs, and discovered test targets before pull-request testing becomes operational.
 - Treat path names as supporting profile evidence only and retain path-only domain correlations as diagnostics rather than selected profiles.
