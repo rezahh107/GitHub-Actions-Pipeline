@@ -18,7 +18,7 @@ jobs:
   repository-validation:
     name: repository-validation
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         # actions/checkout v4.2.2
@@ -48,8 +48,8 @@ jobs:
           if [ "$status" -eq 0 ]; then
             cat "$RUNNER_TEMP/unit-tests.log"
           else
-            echo "Unit tests failed. Showing the final 120 log lines; the complete log is uploaded as an artifact."
-            tail -n 120 "$RUNNER_TEMP/unit-tests.log"
+            echo "Unit tests failed. Showing the final 160 log lines; the complete log is uploaded as an artifact."
+            tail -n 160 "$RUNNER_TEMP/unit-tests.log"
           fi
           exit "$status"
 
@@ -87,6 +87,11 @@ jobs:
             --out "$RUNNER_TEMP/repository_upgrade.deep.json" \
             --implementation-package-out "$RUNNER_TEMP/repository_upgrade.implementation-package.json"
 
+      - name: Validate generated v1.1 reports
+        run: |
+          python tools/validate_repository_upgrade_report.py "$RUNNER_TEMP/repository_upgrade.minimal.json"
+          python tools/validate_repository_upgrade_report.py "$RUNNER_TEMP/repository_upgrade.deep.json"
+
       - name: Check Scope Claim Audit examples
         run: |
           python tools/scope_claim_audit.py --check examples/scope_claim_audit.example.json
@@ -96,18 +101,13 @@ jobs:
       - name: Generate Scope Claim Audit summary
         run: python tools/scope_claim_audit.py --input examples/scope_claim_audit.example.json --out "$RUNNER_TEMP/scope_claim_audit.summary.md"
 
-      - name: Write run summary
-        run: |
-          echo "## GitHub Actions Pipeline validation" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Python modules compiled." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Unit and negative schema tests completed." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Tested SHA: `${{ github.sha }}`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Source head SHA: `${{ github.event.pull_request.head.sha || github.sha }}`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Legacy CI detective report generated." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Minimal Safe CI report generated." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Deep Repository Upgrade report and dry-run implementation package generated." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Remote workflow telemetry was not requested by this validation job." >> "$GITHUB_STEP_SUMMARY"
+      - name: Write run summary and identity
+        shell: bash
+        env:
+          TESTED_SHA: ${{ github.sha }}
+          SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          RUN_IDENTITY_OUT: ${{ runner.temp }}/run-identity.json
+        run: bash tools/render_workflow_summary.sh
 
       - name: Upload repository analysis reports
         # actions/upload-artifact v4.6.2
@@ -119,6 +119,7 @@ jobs:
             ${{ runner.temp }}/repository_upgrade.minimal.json
             ${{ runner.temp }}/repository_upgrade.deep.json
             ${{ runner.temp }}/repository_upgrade.implementation-package.json
+            ${{ runner.temp }}/run-identity.json
           retention-days: 14
           if-no-files-found: error
 
