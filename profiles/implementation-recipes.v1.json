@@ -1,0 +1,17 @@
+{
+  "implementation_recipe_version": "1.0.0",
+  "recipes": [
+    {
+      "recipe_id": "add-python-pr-test-workflow-v1",
+      "recommendation_ids": ["INV-TESTS-EXECUTED-ON-PR", "BASE-TESTS-RUN-ON-PULL-REQUESTS"],
+      "affected_capability": "tests_run_on_pull_requests",
+      "operation": "create_file",
+      "target_path": ".github/workflows/repository-upgrade-tests.yml",
+      "supported_language": "Python",
+      "requires_unique_install_command": true,
+      "requires_unique_test_command": true,
+      "overwrite": false,
+      "validation_commands": ["python -m unittest discover -s tests"]
+    }
+  ]
+}

@@ -1,118 +1,114 @@
 # Repository Upgrade Architecture
 
-Contract version: `1.0.0`  
-Repository version: `0.2.0`
+Current report contract: `1.1.0`  
+Repository version: `0.3.0`
 
 ## Architecture
 
 ```text
-repository files + executable configuration
-                 ↓
-        RepositoryModel v1
-                 ↓
-  profile detection and composition
-                 ↓
-history structure     optional telemetry
-        ↘               ↙
- three independent recommendation channels
-                 ↓
-      bounded ordinal ranking
-                 ↓
- minimal gate plan OR staged deep upgrade
+files + manifests + workflows + bounded source semantics
+                         ↓
+               RepositoryModel v1.1
+                         ↓
+ evidence-rich profile detection + conflict-aware composition
+                         ↓
+ structural history     optional read-only telemetry
+              ↘          ↓          ↙
+ observed failures / structural invariants / baseline capabilities
+                         ↓
+       ranking-policy.v1 + factor-level rationale
+                         ↓
+ minimal plan OR staged deep upgrade + dry-run recipe package
+                         ↓
+ explicit exact-HEAD allowlisted application, when requested
 ```
 
-## Modules
+Validated outcomes feed a separate review-only profile-evolution process. They never mutate runtime behavior automatically.
+
+## Module boundaries
 
 | Module | Responsibility |
 |---|---|
-| `tools/ci_upgrade_models.py` | mode policy, evidence/capability vocabulary, diagnostics, ranking contract |
-| `tools/ci_repository_model.py` | layered deterministic repository and workflow collector |
-| `tools/ci_profiles.py` | profile loading, detection, and composition |
-| `tools/ci_history_analysis.py` | reverts, co-change, source-without-test, workflow churn, repeated fix evidence |
-| `tools/ci_telemetry.py` | offline snapshots and optional read-only GitHub Actions collection |
-| `tools/ci_recommendations.py` | independent channels, ranking, and decisions |
-| `tools/ci_upgrade_engine.py` | orchestration and mode-specific output |
-| `tools/repository_upgrade.py` | CLI |
+| `tools/ci_repository_model.py` | bounded inventory, manifests, workspaces, workflows, command candidates, capability states |
+| `tools/ci_semantic_analysis.py` | Python AST and package/workflow script resolution |
+| `tools/ci_profiles.py` | evidence-rich profile detection and conflict-aware composition |
+| `tools/ci_ranking.py` | versioned ranking-policy loading and factor derivation |
+| `tools/ci_recommendations.py` | independent recommendation channels and decisions |
+| `tools/ci_implementation_engine.py` | dry-run packages and exact-HEAD allowlisted atomic file creation |
+| `tools/ci_outcome_registry.py` | deterministic review-only profile evolution proposals |
+| `tools/ci_upgrade_engine.py` | orchestration and mode-specific report assembly |
+| `tools/repository_upgrade.py` | analysis and explicit application CLI |
+| `tools/profile_evolution.py` | outcome aggregation CLI |
 
-## Repository model
+## Semantic evidence boundary
 
-The model records:
+The v1.1 semantic analyzer supports:
 
-- repository archetypes;
-- components derived from manifest boundaries;
-- languages, frameworks, and build systems;
-- manifests and lockfiles;
-- executable entry points;
-- tests and commands actually observed in workflows;
-- schemas, validators, examples, and generated candidates;
-- workflow triggers, permissions, jobs, steps, and commands;
-- release paths;
-- critical execution paths;
-- source/test and schema/example relationships with evidence state;
-- capability states and unresolved evidence.
+- Python import edges parsed with `ast`;
+- test-to-source resolution when test code imports a local module;
+- literal FastAPI/Flask-style route decorators;
+- `if __name__ == "__main__"` entry signals;
+- `module:function` entry-point resolution against parsed callables;
+- package scripts and workflow commands that invoke them.
 
-Path or naming proximity may support an `inferred` relationship, but never a resolved semantic claim.
+It does not claim dynamic imports, runtime dependency injection, reflection, generated code, JavaScript call graphs, or network behavior. Unsupported semantics remain explicit limitations.
 
-## Profiles
+## Component boundaries
 
-`profiles/capability-profiles.v1.json` is a versioned, data-driven catalog. Multiple profiles may match the same repository. Contributions are unioned deterministically, then explicit exclusions are applied.
+Boundary authority is:
 
-To add a profile:
+1. explicit workspace membership;
+2. nearest manifest root;
+3. repository root fallback.
 
-1. add one profile object with a unique stable `profile_id`;
-2. use only documented detection fields;
-3. declare expected capabilities, invariants, common failures, candidate checks, exclusions, and cost/noise notes;
-4. validate against `schemas/capability_profiles.v1.schema.json`;
-5. add a fixture and profile-composition test.
+A manifest-derived boundary is not presented as semantic ownership. Each component records `boundary_basis` and evidence.
 
-## Ranking model
+## Profile composition
 
-Each factor is an integer ordinal from `0` through `3`.
+Profile matches record the exact satisfied criteria and references. Confidence is based on independent and authoritative signals.
 
-Benefits are added:
+Expected and excluded capability contributions are preserved separately. A conflict is emitted as `PROFILE_CAPABILITY_CONFLICT`; the capability is not silently promoted into baseline recommendations until the conflict is resolved by a versioned rule.
 
-- risk reduction;
-- invariant criticality;
-- regression detection;
-- silent-failure exposure;
-- evidence strength;
-- maintainability;
-- reversibility.
+## Ranking v1.1
 
-Costs are subtracted:
+`profiles/ranking-policy.v1.json` maps capability classes to bounded ordinal risk and cost characteristics. Recommendation ranking records:
 
-- implementation complexity;
-- execution time;
-- noise risk;
-- maintenance cost;
-- overlap with existing controls.
+- source channel;
+- current capability state;
+- evidence confidence and reference count;
+- implementation-step count;
+- all factor values;
+- factor-level rationale;
+- policy version.
 
-The result is an ordering aid, not a probability or exact risk estimate. Confidence may reduce the priority band.
+The result is an ordering aid, not probability, expected loss, or calibrated quantitative risk.
 
-## Cold-start
+## Implementation engine
 
-History states include limited history, cold start, no recorded failures, and informative history. Structural and baseline channels remain active even when observed-failure evidence is absent.
+The engine is real but deliberately narrow.
 
-## Telemetry
+Report generation produces a dry-run `implementation_package`. A recipe is applicable only when all versioned preconditions pass. Application additionally requires:
 
-Deep mode supports:
+- exact Git HEAD match;
+- clean worktree;
+- explicit recipe allowlist;
+- non-existing non-symlink target;
+- content hash match;
+- path containment under repository root.
 
-```bash
---telemetry-json path/to/snapshot.json
-```
+Writes are atomic and non-overwriting. Repository commands are not executed. The first recipe supports creation of a Python pull-request test workflow only when one install command and one test command are unambiguously resolved.
 
-or:
+Unsupported recommendations remain staged recommendations, not fake implementation actions.
 
-```bash
---collect-telemetry
-```
+## Profile evolution
 
-The latter uses `GITHUB_TOKEN` and the read-only Actions runs endpoint. Missing access produces `status: unavailable` plus an actionable diagnostic. It never blocks local analysis.
+`repository_outcomes.v1` records privacy-preserving repository fingerprints, profile IDs, capability transitions, implementation outcome, exact head SHA, and workflow conclusion.
+
+A proposal requires evidence from multiple distinct repositories and exact-head successful outcomes. Output status is `proposed_for_human_review`. Updating a profile or recipe still requires a separate versioned change, fixtures, schema validation, and review.
 
 ## Migration
 
-Existing `ci_detective` consumers remain on report `0.1.1`.
-
-New consumers should invoke `tools/repository_upgrade.py` and validate against `schemas/repository_upgrade_report.v1.schema.json`.
-
-No silent conversion between the two report contracts is performed.
+- Legacy upgrade report `1.0.0` remains valid against `schemas/repository_upgrade_report.v1.schema.json`.
+- New reports use `report_version: 1.1.0` and `schemas/repository_upgrade_report.v1.1.schema.json`.
+- `ci_detective` remains `0.1.1`.
+- No silent conversion is performed.

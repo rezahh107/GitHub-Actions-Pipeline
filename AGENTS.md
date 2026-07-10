@@ -4,87 +4,68 @@ This file defines operating instructions for AI agents working in this repositor
 
 ## Mission
 
-`GitHub-Actions-Pipeline` is an evidence-first repository-analysis and staged-improvement engine. It is not a catalog of generic checks.
+`GitHub-Actions-Pipeline` is an evidence-first repository intelligence and staged-improvement engine. It is not a catalog of generic checks and it is not authorized to invent repository behavior.
 
-The agent must preserve:
+Preserve:
 
 - evidence/inference separation;
 - deterministic validation and serialization;
 - exact-SHA awareness;
-- proposed, rejected, deferred, and intentionally uncovered decisions;
+- proposed, rejected, deferred, blocked, and intentionally uncovered decisions;
 - least-privilege workflow design;
 - reversible branch-based changes;
-- closed schema discipline;
-- explicit evidence limitations;
+- closed schema and registry discipline;
+- explicit limitations;
 - resistance to CI theater.
 
 ## Source precedence
 
 1. Versioned schemas and executable contracts.
 2. Validated fixtures and deterministic assertions.
-3. Architecture and protocol documents.
+3. Versioned registries and architecture protocols.
 4. Current implementation.
 5. Unverified proposals or conversation notes.
 
 Report conflicts. Do not silently merge incompatible rules.
 
-## Explicit operating modes
+## Operating modes
 
-### Minimal Safe CI — `minimal-safe-ci`
+### `minimal-safe-ci`
 
-Use when the goal is a conservative, fast, low-noise set of strongly justified controls.
+Default conservative mode. No baseline expansion, remote telemetry requirement, implementation package, or semantic-history expansion beyond what the policy enables.
 
-Policy:
+### `deep-repository-upgrade`
 
-- bounded repository modeling;
-- no remote telemetry requirement;
-- no baseline-capability expansion;
-- only strongly supported, reversible Phase 1 items;
-- existing `ci_detective` contract remains valid.
+Explicit opt-in. Adds bounded semantic modeling, profile composition, structural history, optional telemetry, capability gaps, calibrated ranking, staged output, and a dry-run implementation package.
 
-### Deep Repository Upgrade — `deep-repository-upgrade`
+Mode behavior must remain policy-driven rather than scattered conditionals.
 
-Use only when explicitly selected.
+## Evidence and relationship rules
 
-Policy:
+Evidence states:
 
-- executable repository model;
-- layered collector;
-- bounded structural history;
-- optional read-only workflow telemetry;
-- composable capability profiles;
-- three independent recommendation sources;
-- cold-start handling;
-- capability-gap and blind-spot analysis;
-- testability-first decisions;
-- bounded ordinal ranking;
-- staged Phase 1 and Phase 2 output.
+```text
+observed
+derived
+inferred
+unavailable
+not_applicable
+```
 
-Do not implement the modes through scattered conditionals. Use the versioned policy and strategy modules.
+Relationship resolution states are separate:
 
-## Evidence rules
+```text
+resolved
+partial
+inferred
+unresolved
+```
 
-Separate:
+Do not call a relationship resolved unless a versioned parser or declarative reference establishes it. File/path proximity is `inferred` at most.
 
-- `observed`;
-- `derived`;
-- `inferred`;
-- `unavailable`;
-- `not_applicable`.
+Component boundaries follow explicit workspace declarations, then nearest manifest roots. A manifest boundary is not proof of semantic ownership.
 
-Never claim a capability is operational because a similarly named file exists. Confirm executable configuration or a command actually run by CI.
-
-Recommendation sources are independent:
-
-- `observed_failure`;
-- `structural_invariant`;
-- `baseline_capability`.
-
-No recorded historical failure means `not_yet_observed`, not `not_needed`.
-
-Correlation such as co-change or hotspot evidence must not be described as causation.
-
-## Capability states
+## Capability rules
 
 Use only:
 
@@ -98,75 +79,97 @@ unknown
 not_applicable
 ```
 
-`nominal` means an artifact exists but operational execution is not proven.
+A similarly named file never proves operational capability. Confirm executable configuration or a command actually connected to CI.
+
+Recommendation channels remain independent:
+
+- `observed_failure`;
+- `structural_invariant`;
+- `baseline_capability`.
+
+No recorded failure means `not_yet_observed`, not `not_needed`. Co-change and repeated fixes are correlation, not causation.
+
+## Semantic analyzer boundary
+
+Current semantic authority is limited to:
+
+- bounded Python AST parsing;
+- local Python import resolution;
+- literal route decorators;
+- `__main__` guards;
+- declared Python `module:function` entry points;
+- package scripts and workflow commands that invoke them.
+
+Do not infer dynamic imports, reflection, dependency injection, runtime routes, generated code, JavaScript call graphs, or network behavior.
+
+## Profile rules
+
+Every profile match must preserve matched criteria and references. Confidence must reflect independent and authoritative signals.
+
+Expected and excluded capability contributions must be retained separately. If both occur, emit a conflict diagnostic and withhold the capability from baseline recommendations until a versioned rule resolves it.
+
+## Ranking
+
+Use `profiles/ranking-policy.v1.json`. Each factor is an integer from `0` through `3`. Preserve:
+
+- ranking-policy version;
+- current capability state;
+- evidence confidence and reference count;
+- factor values;
+- factor-level rationale;
+- deterministic tie-breakers.
+
+The total is an ordering aid, not probability or calibrated monetary risk. Do not optimize primarily for patch size or use fractional pseudo-precision.
+
+## Implementation engine boundary
+
+Analysis is read-only by default. A dry-run implementation package does not authorize mutation.
+
+Mutation requires all of:
+
+- explicit `deep-repository-upgrade` mode;
+- `--apply-phase-1`;
+- exact current HEAD supplied through `--expected-head-sha`;
+- clean Git worktree;
+- explicit `--allow-recipe` entries;
+- applicable versioned recipe preconditions;
+- absent non-symlink target path;
+- content-hash verification;
+- output/report paths outside the target repository.
+
+Current mutation supports non-overwriting atomic file creation only. Never execute repository commands in the generic implementation engine; repository code is untrusted input. Return validation commands for an explicitly trusted environment.
+
+## Outcome-driven profile evolution
+
+No hidden online learning or mutable memory is allowed.
+
+Only exact-head successful outcomes from distinct privacy-preserving repository fingerprints may produce review-only proposals. Proposals must never update profile, ranking, or recipe registries automatically. Registry changes require a separate versioned PR, schemas, fixtures, tests, and migration notes.
+
+## Telemetry
+
+Remote telemetry is optional and read-only. Missing token, permission, response shape, jobs, or logs must produce explicit unavailable evidence. Do not fabricate flakiness, branch coverage, durations, or failing steps.
 
 ## Determinism
 
 Required:
 
-- sort unordered collections before serialization;
+- sorted unordered collections;
 - stable JSON key order;
 - versioned canonicalization;
-- reject NaN and infinities;
+- UTF-8 and timezone-explicit behavior;
 - SHA-256 over canonical content;
-- explicit UTF-8 and timezone handling;
+- rejection of NaN and infinities;
 - deterministic tie-breakers;
-- no hidden mutable global state;
-- bounded Git history and API collection.
+- bounded file, Git-history, and API collection;
+- no hidden mutable global state.
 
-## Ranking
-
-Do not optimize primarily for patch size.
-
-Rank with bounded ordinal factors for:
-
-- risk reduction;
-- invariant criticality;
-- regression-detection value;
-- silent-failure exposure;
-- evidence strength;
-- maintainability;
-- reversibility;
-- implementation complexity;
-- execution time;
-- noise risk;
-- maintenance cost;
-- overlap with existing controls.
-
-Do not use fractional pseudo-precision.
-
-## Repository-model boundary
-
-The repository model may represent only evidence available from:
-
-- manifests and lockfiles;
-- parsed configuration;
-- workflow triggers, permissions, jobs, steps, and commands;
-- component and workspace declarations;
-- tests, schemas, validators, examples, and release configuration;
-- declaratively detectable generated paths;
-- bounded local Git history;
-- explicitly supplied or read-only GitHub telemetry.
-
-Unknown semantic relationships remain unresolved.
-
-## Telemetry
-
-Remote telemetry is optional. Local operation must not require network access.
-
-When requested, use only read permissions. If access, token, or response shape is unavailable, emit an actionable unavailable state. Do not fabricate runs, jobs, durations, branch coverage, or flakiness.
-
-## Implementation authority and safety
-
-For explicit implementation prompts, a dedicated branch is authorization for normal reversible changes.
+## Repository safety
 
 Never:
 
 - write directly to `main`;
-- merge a pull request;
-- enable auto-merge;
-- trigger a release;
-- publish packages;
+- merge or enable auto-merge;
+- publish packages or trigger releases;
 - alter secrets;
 - expose credentials;
 - delete branches;
@@ -178,48 +181,26 @@ Use coherent commits and keep unrelated changes out of scope.
 
 Before finalizing:
 
-1. run targeted tests;
+1. run targeted unit and malformed-input tests;
 2. run `python -m unittest discover -s tests`;
-3. validate schemas and positive/negative fixtures;
+3. validate all schemas and registries;
 4. generate both mode reports at a fixed timestamp;
 5. verify canonical hashes;
-6. inspect exact exit codes;
-7. inspect GitHub Actions on the exact PR head SHA when available.
+6. test implementation dry-run and exact-HEAD guards in temporary Git fixtures;
+7. test outcome thresholds and no-auto-mutation behavior;
+8. inspect exact exit codes;
+9. inspect GitHub Actions on the exact PR head SHA.
 
-A fixture-only pass is not production proof. Label validation scope precisely.
+Fixture success is not production proof. State verification scope precisely.
 
 ## Diagnostics
 
-Every important failure should identify:
-
-- what failed;
-- where;
-- affected invariant or capability;
-- evidence references;
-- why it matters;
-- likely repair location or next diagnostic step.
-
-Avoid bare messages such as `validation failed`.
+Important failures must identify what failed, where, the affected invariant or capability, evidence references, why it matters, and a repair or next diagnostic step. Avoid bare messages such as `validation failed`.
 
 ## Documentation and traceability
 
-Keep these aligned:
-
-- `README.md`;
-- `docs/repository-upgrade.md`;
-- `docs/DEEP_REPOSITORY_UPGRADE_STATUS.md`;
-- schemas;
-- profile catalog;
-- examples and fixtures;
-- tests;
-- workflow commands;
-- `CHANGELOG.md`;
-- `VERSION`.
-
-Do not mark tracker items `verified` without executed evidence.
+Keep README, architecture, tracker, protocols, prompts, schemas, registries, fixtures, tests, workflow commands, changelog, and version metadata aligned. Do not mark a tracker item `verified` without executed evidence.
 
 ## User-facing reports
 
-Write owner-facing implementation reports in Persian. Preserve technical identifiers, paths, commands, schema names, branch names, SHAs, and code symbols in their original form.
-
-Do not expose private chain-of-thought. Provide concise conclusions, evidence, decisions, limitations, and next safe action.
+Write owner-facing implementation reports in Persian. Preserve technical identifiers, paths, commands, schema names, branch names, SHAs, and code symbols. Do not expose private chain-of-thought; provide conclusions, evidence, decisions, limitations, and the next safe action.

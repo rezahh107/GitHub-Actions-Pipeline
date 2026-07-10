@@ -1,28 +1,31 @@
 # GitHub Actions Pipeline
 
-Current version: `0.2.0`.
+Current version: `0.3.0`.
 
-This repository provides an evidence-first repository-analysis and staged-improvement engine. It preserves the existing conservative CI collector and adds an explicit opt-in deep mode.
-
-## Start contract
-
-Start trigger: `شروع`
-
-Canonical response: `آماده‌ام. آدرس ریپو را برای بررسی بفرست.`
-
-References: `START.md` and `protocol/start.yaml`.
+This repository is an evidence-first repository intelligence and staged-improvement engine. GitHub Actions remains one enforcement surface, not the whole product.
 
 ## Operating modes
 
 ### `minimal-safe-ci`
 
-Conservative, fast, deterministic, low-noise, and limited to a few strongly justified controls.
+Conservative, deterministic, low-noise, and limited to a few strongly justified controls. It remains the default.
 
 ### `deep-repository-upgrade`
 
-Builds an executable repository model, composes capability profiles, separates recommendation sources, detects capability gaps and CI blind spots, ranks high-leverage improvements, and produces a staged implementation package.
+Adds bounded semantic resolution, composable profiles, structural history, optional telemetry, three recommendation channels, calibrated ordinal ranking, a dry-run implementation package, and review-only profile evolution.
 
-The modes are policy objects, not scattered workflow flags.
+## Repository model v1.1
+
+The model combines:
+
+- manifests, lockfiles, workspaces, and component roots;
+- workflow triggers, permissions, jobs, steps, working directories, and commands;
+- Python AST imports, literal route decorators, `__main__` guards, and declared `module:function` entry points;
+- package-script and workflow-to-script resolution;
+- resolved source-to-test relationships when a test imports a local source module;
+- explicit inferred or unresolved states where semantic proof is unavailable.
+
+Python AST and declarative package scripts are the first supported semantic analyzers. Other languages remain config-aware but semantically unresolved unless a versioned analyzer is added.
 
 ## Quick start
 
@@ -39,46 +42,68 @@ python tools/repository_upgrade.py \
   --repo-root . \
   --mode deep-repository-upgrade \
   --out /tmp/deep-upgrade.json \
+  --implementation-package-out /tmp/implementation-package.json \
   --generated-at 2026-07-10T00:00:00Z
 ```
 
-Optional workflow telemetry can be supplied through `--telemetry-json`. Deep mode can also use `--collect-telemetry` with a read-only `GITHUB_TOKEN`; local analysis remains fully usable when telemetry is unavailable.
+## Opt-in implementation
 
-## Backward compatibility
+Analysis never mutates the target repository. Applying a Phase 1 action requires all of the following:
 
-`tools/ci_detective.py` and `schemas/ci_detective_report.schema.json` remain on contract `0.1.1`. Existing consumers do not need to migrate.
+- Deep mode;
+- an applicable versioned recipe;
+- exact expected Git HEAD;
+- a clean worktree;
+- an explicit recipe allowlist;
+- an absent target path;
+- report/result paths outside the target repository.
 
-The new contract is:
+Example:
 
-- CLI: `tools/repository_upgrade.py`
-- report schema: `schemas/repository_upgrade_report.v1.schema.json`
-- profile catalog: `profiles/capability-profiles.v1.json`
-- profile schema: `schemas/capability_profiles.v1.schema.json`
-- fixtures: `fixtures/repository-upgrade/scenarios.v1.json`
-
-## Recommendation channels
-
-Every recommendation identifies exactly one source:
-
-1. `observed_failure`
-2. `structural_invariant`
-3. `baseline_capability`
-
-A repository with no recorded failures is treated as cold-start or limited-history. That does not disable structural invariants or profile baselines.
-
-## Capability states
-
-```text
-absent
-nominal
-partial
-operational
-operational_but_weak
-unknown
-not_applicable
+```bash
+python tools/repository_upgrade.py \
+  --repo-root /path/to/trusted/repository \
+  --mode deep-repository-upgrade \
+  --out /tmp/deep.json \
+  --implementation-package-out /tmp/package.json \
+  --apply-phase-1 \
+  --allow-recipe add-python-pr-test-workflow-v1 \
+  --expected-head-sha <40-character-head-sha> \
+  --implementation-result-out /tmp/application-result.json
 ```
 
-A file's existence does not prove a capability is operational. The model inspects executable configuration and commands run by workflows.
+The implementation engine performs only allowlisted atomic file creation. It does **not** execute repository commands because checked-out code is untrusted input. Validation commands are returned for execution in an explicitly trusted environment.
+
+## Profile evolution
+
+Outcome-driven improvement is versioned and review-only, not hidden online learning:
+
+```bash
+python tools/profile_evolution.py \
+  --outcomes outcomes.json \
+  --out /tmp/profile-evolution-proposals.json \
+  --minimum-distinct-repositories 3
+```
+
+Only exact-head successful outcomes can contribute. Proposals never modify profile or recipe registries automatically.
+
+## Contracts
+
+Backward-compatible contracts:
+
+- `tools/ci_detective.py` and `schemas/ci_detective_report.schema.json`: `0.1.1`;
+- `schemas/repository_upgrade_report.v1.schema.json`: legacy upgrade report `1.0.0`;
+- `schemas/repository_upgrade_report.v1.1.schema.json`: current upgrade report `1.1.0`.
+
+Supporting registries and schemas:
+
+- `profiles/capability-profiles.v1.json`;
+- `profiles/ranking-policy.v1.json`;
+- `profiles/implementation-recipes.v1.json`;
+- `schemas/ranking_policy.v1.schema.json`;
+- `schemas/implementation_recipes.v1.schema.json`;
+- `schemas/repository_outcomes.v1.schema.json`;
+- `schemas/profile_evolution.v1.schema.json`.
 
 ## Validation
 
@@ -86,12 +111,12 @@ A file's existence does not prove a capability is operational. The model inspect
 python -m unittest discover -s tests
 python tools/ci_detective.py --repo-root . --out /tmp/ci-detective.json --generated-at 2026-07-10T00:00:00Z
 python tools/repository_upgrade.py --repo-root . --mode minimal-safe-ci --out /tmp/minimal.json --generated-at 2026-07-10T00:00:00Z
-python tools/repository_upgrade.py --repo-root . --mode deep-repository-upgrade --out /tmp/deep.json --generated-at 2026-07-10T00:00:00Z
+python tools/repository_upgrade.py --repo-root . --mode deep-repository-upgrade --out /tmp/deep.json --implementation-package-out /tmp/package.json --generated-at 2026-07-10T00:00:00Z
 ```
 
 ## Documentation
 
 - Architecture and extension guide: `docs/repository-upgrade.md`
 - Canonical implementation tracker: `docs/DEEP_REPOSITORY_UPGRADE_STATUS.md`
-- Existing start contract: `START.md` and `protocol/start.yaml`
+- Deep protocol: `pipeline/09-deep-repository-upgrade.md`
 - Agent rules: `AGENTS.md`

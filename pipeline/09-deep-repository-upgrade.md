@@ -4,30 +4,44 @@
 
 - explicit mode: `deep-repository-upgrade`;
 - readable repository root;
-- versioned profile catalog;
-- optional Git history;
+- versioned profile, ranking, and recipe registries;
+- optional full Git history;
 - optional read-only workflow telemetry.
 
-## Stages
+## Read-only analysis stages
 
-1. Validate operating mode and input paths.
-2. Build the deterministic repository model.
-3. Parse workflows and commands.
-4. Detect and compose profiles.
-5. Collect bounded structural history.
-6. Collect or explicitly decline remote telemetry.
-7. Classify capability states.
-8. Generate three independent recommendation channels.
-9. Apply cold-start confidence rules.
-10. Rank with bounded ordinal factors.
-11. Decide Phase 1, Phase 2, deferred, rejected, and intentionally uncovered items.
-12. Emit the closed v1 report with canonical SHA-256.
-13. Validate schemas, fixtures, diagnostics, and mode separation.
+1. Validate mode and input paths.
+2. Parse manifests, lockfiles, workspaces, workflows, and command candidates.
+3. Resolve bounded Python AST and package-script semantics.
+4. Build evidence-bearing components, relationships, critical paths, and capability states.
+5. Detect profiles with matched-signal evidence.
+6. Preserve expected/excluded contributions and diagnose composition conflicts.
+7. Collect bounded structural history.
+8. Collect or explicitly decline remote telemetry.
+9. Generate independent observed-failure, structural-invariant, and baseline-capability channels.
+10. Apply cold-start confidence rules.
+11. Derive ranking factors from `ranking-policy.v1` and record factor rationale.
+12. Produce Phase 1, Phase 2, deferred, rejected, and intentionally uncovered decisions.
+13. Build a dry-run implementation package from versioned recipes.
+14. Emit report `1.1.0` with canonical SHA-256.
 
-## Implementation scope
+## Optional mutation stage
 
-A justified improvement may change workflows, tests, negative fixtures, validators, deterministic scripts, package verification, generated-file checks, configuration consistency, or testability. New dependencies require concrete purpose and compatibility evidence.
+Mutation is not implied by analysis. It requires:
+
+- `--apply-phase-1`;
+- `--allow-recipe` for each permitted recipe;
+- `--expected-head-sha` matching current HEAD;
+- clean worktree;
+- applicable preconditions;
+- outputs outside the target repository.
+
+Only non-overwriting atomic file creation is currently supported. Repository commands are never executed by the implementation engine.
+
+## Outcome-driven evolution
+
+Validated outcomes may be aggregated into review-only profile proposals. No online learning, hidden memory, or automatic registry mutation is allowed.
 
 ## Safety
 
-Do not modify default branches, merge PRs, publish artifacts, or change secrets. Remote telemetry is read-only and optional.
+Do not modify default branches, merge PRs, enable auto-merge, publish packages, alter secrets, execute untrusted repository commands, or present inferred relationships as resolved.

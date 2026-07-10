@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0
+
+- Add Repository Model `1.1.0` with explicit workspace boundaries and bounded semantic graphs.
+- Resolve Python AST imports, literal route decorators, `__main__` guards, declared `module:function` entry points, and package/workflow script edges.
+- Resolve source-to-test relationships only when local Python imports provide direct evidence; keep proximity-only relationships inferred.
+- Add evidence-rich profile matches and conflict-aware expected/excluded capability composition.
+- Add `ranking-policy.v1` with capability-specific ordinal factors, policy inputs, and factor-level rationale.
+- Add a real but narrow implementation engine: dry-run by default, exact-HEAD, clean-worktree, explicit recipe allowlist, atomic non-overwriting writes, and no execution of untrusted repository commands.
+- Add the first versioned implementation recipe for an unambiguous Python pull-request test workflow.
+- Add exact-head validated outcome aggregation and deterministic review-only profile-evolution proposals without automatic registry mutation.
+- Add report schema `1.1.0` while retaining legacy report `1.0.0` and `ci_detective` `0.1.1`.
+- Add semantic, profile-conflict, ranking-policy, implementation-safety, outcome-threshold, and negative schema tests.
+
 ## 0.2.0
 
 - Add explicit `minimal-safe-ci` and `deep-repository-upgrade` policy modes.

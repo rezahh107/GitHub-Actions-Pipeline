@@ -1,0 +1,28 @@
+{
+  "ranking_policy_version": "1.0.0",
+  "default": {
+    "invariant_criticality": 2,
+    "regression_detection": 2,
+    "silent_failure_exposure": 2,
+    "execution_time": 1,
+    "noise_risk": 1,
+    "maintenance_cost": 1
+  },
+  "capabilities": {
+    "tests_run_on_pull_requests": {"invariant_criticality":3,"regression_detection":3,"silent_failure_exposure":3,"execution_time":1,"noise_risk":1,"maintenance_cost":1},
+    "schema_validation": {"invariant_criticality":3,"regression_detection":3,"silent_failure_exposure":3,"execution_time":1,"noise_risk":0,"maintenance_cost":1},
+    "build_verified": {"invariant_criticality":3,"regression_detection":3,"silent_failure_exposure":3,"execution_time":2,"noise_risk":1,"maintenance_cost":1},
+    "reproducible_dependency_install": {"invariant_criticality":2,"regression_detection":2,"silent_failure_exposure":3,"execution_time":2,"noise_risk":0,"maintenance_cost":1},
+    "negative_parser_validator_tests": {"invariant_criticality":2,"regression_detection":3,"silent_failure_exposure":2,"execution_time":1,"noise_risk":0,"maintenance_cost":1},
+    "generated_artifact_validation": {"invariant_criticality":3,"regression_detection":3,"silent_failure_exposure":3,"execution_time":2,"noise_risk":1,"maintenance_cost":2},
+    "release_artifact_validation": {"invariant_criticality":3,"regression_detection":2,"silent_failure_exposure":3,"execution_time":2,"noise_risk":1,"maintenance_cost":2},
+    "least_privilege_workflow_permissions": {"invariant_criticality":2,"regression_detection":1,"silent_failure_exposure":2,"execution_time":0,"noise_risk":0,"maintenance_cost":1}
+  },
+  "source_risk_reduction": {
+    "observed_failure": 3,
+    "structural_invariant": 2,
+    "baseline_capability": 1
+  },
+  "confidence_evidence_strength": {"low":1,"medium":2,"high":3},
+  "capability_overlap": {"absent":0,"unknown":0,"nominal":1,"partial":1,"operational_but_weak":2,"operational":3,"not_applicable":3}
+}
