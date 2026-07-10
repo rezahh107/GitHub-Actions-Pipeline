@@ -1,6 +1,6 @@
 import hashlib,json,shutil,subprocess,tempfile,unittest
 from pathlib import Path
-from jsonschema import Draft7Validator,ValidationError
+from jsonschema import Draft7Validator
 
 ROOT=Path(__file__).resolve().parents[1]
 FIXED_TIME="2026-07-10T00:00:00Z"
@@ -16,8 +16,10 @@ def write_files(root,files):
     for rel,content in files.items():
         path=root/rel;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(content,encoding="utf-8")
 
+
 def init_git(root):
     subprocess.run(["git","init","-q"],cwd=root,check=True);subprocess.run(["git","config","user.email","test@example.test"],cwd=root,check=True);subprocess.run(["git","config","user.name","Test"],cwd=root,check=True);subprocess.run(["git","add","."],cwd=root,check=True);subprocess.run(["git","commit","-q","-m","initial"],cwd=root,check=True);return subprocess.check_output(["git","rev-parse","HEAD"],cwd=root,text=True).strip()
+
 
 class HardeningTests(unittest.TestCase):
     def test_semantic_model_resolves_test_import_entry_and_route(self):
@@ -66,7 +68,9 @@ class HardeningTests(unittest.TestCase):
 
     def test_profile_evolution_is_thresholded_review_only_and_deterministic(self):
         outcomes=[]
-        for i in range(3):outcomes.append({"outcome_id":f"o{i}","repository_fingerprint":hashlib.sha256(f"r{i}".encode()).hexdigest(),"profile_ids":["python-cli"],"recommendation_id":"INV-TESTS-EXECUTED-ON-PR","capability_id":"tests_run_on_pull_requests","pre_capability_state":"absent","implementation_status":"applied","post_capability_state":"operational","validation":{"exact_head_sha":str(i)*40,"workflow_conclusion":"success"}})
+        for i in range(3):
+            sha=str(i)*40
+            outcomes.append({"outcome_id":f"o{i}","repository_fingerprint":hashlib.sha256(f"r{i}".encode()).hexdigest(),"profile_ids":["python-cli"],"recommendation_id":"INV-TESTS-EXECUTED-ON-PR","capability_id":"tests_run_on_pull_requests","pre_capability_state":"absent","implementation_status":"applied","post_capability_state":"operational","validation":{"exact_head_sha":sha,"workflow_head_sha":sha,"workflow_conclusion":"success"}})
         registry={"outcome_contract_version":"1.0.0","outcomes":outcomes};first=build_profile_evolution_proposals(registry);second=build_profile_evolution_proposals(registry);self.assertEqual(first,second);self.assertFalse(first["automatic_registry_mutation"]);self.assertEqual(len(first["proposals"]),1);self.assertEqual(first["proposals"][0]["status"],"proposed_for_human_review")
 
     def test_deep_report_has_implementation_package_minimal_does_not(self):
