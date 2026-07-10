@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Reject repository symlink files and symlinked parents before metadata/content reads, constrain workspace patterns to bounded contained relative paths, and emit stable path diagnostics without serializing external content.
+- Require behavioral command modes, structurally runnable GitHub Actions jobs, and discovered test targets before pull-request testing becomes operational.
+- Treat path names as supporting profile evidence only and retain path-only domain correlations as diagnostics rather than selected profiles.
+- Replace collision-prone structural-history line sentinels with validated NUL-delimited commit and filename records.
+- Check out and verify the exact pull-request source head before validation and publish a structured identity record that distinguishes the event SHA from the tested source SHA.
 - Replace text-like workflow command matching with a bounded standalone argv evidence parser; comments, inert shell text, control flow, substitutions, heredocs, pipes, and ambiguous constructs no longer establish operational capability.
 - Preserve missing versus explicit-empty GitHub Actions permissions and compute effective permissions for every job using job-over-workflow precedence.
 - Close all contract-bearing Repository Upgrade Report `1.1.0` objects and add mutation-negative schema coverage.
