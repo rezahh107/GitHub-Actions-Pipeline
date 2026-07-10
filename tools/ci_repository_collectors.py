@@ -25,6 +25,7 @@ MAX_FILES = 25_000
 MAX_TEXT_BYTES = 2_000_000
 MAX_WORKSPACE_PATTERNS = 256
 MAX_WORKSPACE_MATCHES = 1_000
+WORKFLOW_EXECUTION_ELIGIBILITY_VERSION = "1.0.0"
 LANG = {".py": "Python", ".js": "JavaScript", ".jsx": "JavaScript", ".mjs": "JavaScript", ".cjs": "JavaScript", ".ts": "TypeScript", ".tsx": "TypeScript", ".json": "JSON", ".md": "Markdown", ".yml": "YAML", ".yaml": "YAML", ".php": "PHP", ".toml": "TOML", ".go": "Go", ".rs": "Rust", ".rb": "Ruby", ".cs": "C#", ".java": "Java", ".sh": "Shell", ".html": "HTML", ".css": "CSS"}
 MANIFEST = {"pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "requirements-dev.txt", "requirements-test.txt", "package.json", "composer.json", "Cargo.toml", "go.mod", "pom.xml", "build.gradle"}
 LOCK = {"uv.lock", "poetry.lock", "Pipfile.lock", "requirements.lock", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "composer.lock", "Cargo.lock"}
@@ -280,6 +281,70 @@ def _job_shape(raw_job: dict[str, object]) -> tuple[str, str]:
     return "normal", "runnable_normal_job"
 
 
+def _condition_eligibility(container: dict[str, object]) -> tuple[str, str]:
+    """Classify a bounded condition without evaluating GitHub expressions."""
+    if "if" not in container:
+        return "eligible", "condition_absent"
+    value = container.get("if")
+    if isinstance(value, bool):
+        return ("eligible", "literal_true") if value else ("disabled", "literal_false")
+    if not isinstance(value, str):
+        return "invalid", "condition_must_be_boolean_or_string"
+    normalized = value.strip()
+    if normalized.startswith("${{") and normalized.endswith("}}"):
+        normalized = normalized[3:-2].strip()
+    lowered = normalized.lower()
+    if lowered == "true":
+        return "eligible", "literal_true"
+    if lowered == "false":
+        return "disabled", "literal_false"
+    return "conditional", "dynamic_condition_unresolved"
+
+
+def _gate_records(records: list[dict[str, object]], state: str, reason: str) -> list[dict[str, object]]:
+    if state == "eligible":
+        return records
+    target_status = "inert" if state == "disabled" else "unsupported"
+    gated: list[dict[str, object]] = []
+    for record in records:
+        if record.get("status") == "resolved":
+            gated.append({**record, "status": target_status, "reason": reason, "families": []})
+        else:
+            gated.append(record)
+    return gated
+
+
+def _condition_diagnostic(scope: str, reference: str, state: str, reason: str) -> dict[str, object] | None:
+    if state == "eligible":
+        return None
+    if state == "disabled":
+        return diagnostic(
+            f"WORKFLOW_{scope.upper()}_CONDITION_DISABLED",
+            f"{scope.title()} {reference} is deterministically disabled by a literal-false condition under execution-eligibility model {WORKFLOW_EXECUTION_ELIGIBILITY_VERSION}.",
+            affected_area="workflow_execution",
+            evidence_references=[reference],
+            repair_hint="Remove the literal-false condition before treating this execution path as operational evidence.",
+            severity="info",
+        )
+    if state == "conditional":
+        return diagnostic(
+            f"WORKFLOW_{scope.upper()}_CONDITION_UNRESOLVED",
+            f"{scope.title()} {reference} uses a dynamic condition that the bounded analyzer does not evaluate under execution-eligibility model {WORKFLOW_EXECUTION_ELIGIBILITY_VERSION}.",
+            affected_area="workflow_execution",
+            evidence_references=[reference],
+            repair_hint="Use an absent or literal-true condition for unconditional static proof, or model this expression under a separately versioned condition evaluator.",
+            severity="info",
+        )
+    return diagnostic(
+        f"WORKFLOW_{scope.upper()}_CONDITION_MALFORMED",
+        f"{scope.title()} {reference} has a malformed condition: {reason}.",
+        affected_area="workflow_execution",
+        evidence_references=[reference],
+        repair_hint="Use a valid GitHub Actions boolean or expression string; malformed conditions cannot establish execution evidence.",
+        severity="warning",
+    )
+
+
 def parse_workflow(root: Path, path: Path) -> tuple[dict[str, object], list[dict[str, object]]]:
     data, error = _load(path, root)
     rp = rel(root, path)
@@ -303,6 +368,10 @@ def parse_workflow(root: Path, path: Path) -> tuple[dict[str, object], list[dict
             diagnostics.append(diagnostic("WORKFLOW_JOB_MALFORMED", f"Job {jid!r} in {rp} must be a mapping.", affected_area="workflow_model", evidence_references=[reference], repair_hint="Replace the malformed job with a valid normal or reusable GitHub Actions job mapping."))
             continue
         shape, shape_reason = _job_shape(raw_job)
+        job_condition_state, job_condition_reason = _condition_eligibility(raw_job)
+        condition_diagnostic = _condition_diagnostic("job", reference, job_condition_state, job_condition_reason)
+        if condition_diagnostic is not None:
+            diagnostics.append(condition_diagnostic)
         if shape == "invalid":
             diagnostics.append(diagnostic("WORKFLOW_JOB_NOT_RUNNABLE", f"Job {jid!r} in {rp} is not structurally runnable: {shape_reason}.", affected_area="workflow_execution", evidence_references=[reference], repair_hint="Provide a supported runs-on plus steps normal job, or a standalone reusable-workflow uses job."))
         elif shape == "reusable":
@@ -316,14 +385,31 @@ def parse_workflow(root: Path, path: Path) -> tuple[dict[str, object], list[dict
             raw_steps = []
         steps: list[dict[str, object]] = []
         for index, raw_step in enumerate(raw_steps):
+            step_reference = f"{reference}.steps[{index}]"
             if not isinstance(raw_step, dict):
+                diagnostics.append(diagnostic("WORKFLOW_STEP_MALFORMED", f"Step {index} in job {jid!r} must be a mapping.", affected_area="workflow_execution", evidence_references=[step_reference], repair_hint="Replace the malformed step with a valid run, uses, or supported non-command step mapping."))
                 continue
             run = raw_step.get("run")
             uses = raw_step.get("uses")
+            has_run = isinstance(run, str)
+            has_uses = isinstance(uses, str)
+            invalid_execution_form = has_run and has_uses
+            if invalid_execution_form:
+                diagnostics.append(diagnostic("WORKFLOW_STEP_EXECUTION_FORM_INVALID", f"Step {index} in job {jid!r} contains both run and uses and cannot establish command execution evidence.", affected_area="workflow_execution", evidence_references=[step_reference], repair_hint="Choose exactly one execution form for this step: run or uses.", severity="warning"))
+            step_condition_state, step_condition_reason = _condition_eligibility(raw_step)
+            step_condition_diagnostic = _condition_diagnostic("step", step_reference, step_condition_state, step_condition_reason)
+            if step_condition_diagnostic is not None:
+                diagnostics.append(step_condition_diagnostic)
             working_directory = raw_step.get("working-directory") if isinstance(raw_step.get("working-directory"), str) else None
-            records = parse_run_block(run, working_directory=working_directory) if isinstance(run, str) else []
+            records = parse_run_block(run, working_directory=working_directory) if has_run else []
             if shape != "normal":
-                records = [{**record, "status": "unsupported", "reason": "job_not_runnable", "families": []} for record in records]
+                records = _gate_records(records, "invalid", "job_not_runnable")
+            elif job_condition_state != "eligible":
+                records = _gate_records(records, job_condition_state, f"job_condition_{job_condition_reason}")
+            elif invalid_execution_form:
+                records = _gate_records(records, "invalid", "step_mixes_run_and_uses")
+            elif step_condition_state != "eligible":
+                records = _gate_records(records, step_condition_state, f"step_condition_{step_condition_reason}")
             all_records.extend({**record, "workflow": rp, "job_id": str(jid), "step_index": index} for record in records)
             steps.append({"index": index, "name": raw_step.get("name") if isinstance(raw_step.get("name"), str) else None, "uses": uses if isinstance(uses, str) else None, "run": run if isinstance(run, str) else None, "working_directory": working_directory, "command_evidence": records})
         job["steps"] = steps
