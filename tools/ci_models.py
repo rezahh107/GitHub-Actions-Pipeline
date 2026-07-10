@@ -32,6 +32,12 @@ class EvidenceCollectionError(RuntimeError):
 
 
 def run_git(root: Path, args: list[str], timeout: int = 15) -> tuple[bool, str]:
+    """Run Git for normalized human-readable output.
+
+    This helper intentionally trims successful text output and must not be used
+    for NUL-framed path or metadata evidence where leading/trailing bytes are
+    part of record identity. Use :func:`run_git_bytes` for those streams.
+    """
     try:
         result = subprocess.run(
             ["git", *args],
@@ -48,6 +54,30 @@ def run_git(root: Path, args: list[str], timeout: int = 15) -> tuple[bool, str]:
     if result.returncode != 0:
         return False, result.stderr.strip() or result.stdout.strip()
     return True, result.stdout.strip()
+
+
+def run_git_bytes(root: Path, args: list[str], timeout: int = 15) -> tuple[bool, bytes]:
+    """Run Git without text decoding or whitespace normalization.
+
+    Successful stdout is returned byte-for-byte. This is the only shared helper
+    suitable for NUL-delimited Git record streams. Failure payloads are also
+    returned as bytes and may be normalized only after the caller has decided
+    they are diagnostic text rather than evidence identity.
+    """
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=root,
+            text=False,
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return False, str(exc).encode("utf-8", errors="replace")
+    if result.returncode != 0:
+        return False, result.stderr if result.stderr else result.stdout
+    return True, result.stdout
 
 
 def optional_env(environ: Mapping[str, str], name: str) -> str | None:
