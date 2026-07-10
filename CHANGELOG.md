@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Replace text-like workflow command matching with a bounded standalone argv evidence parser; comments, inert shell text, control flow, substitutions, heredocs, pipes, and ambiguous constructs no longer establish operational capability.
+- Preserve missing versus explicit-empty GitHub Actions permissions and compute effective permissions for every job using job-over-workflow precedence.
+- Close all contract-bearing Repository Upgrade Report `1.1.0` objects and add mutation-negative schema coverage.
+- Validate complete outcome registries before aggregation, require lowercase exact 40-character Git identities, reject duplicate/conflicting outcomes, and tie successful workflow evidence to the exact outcome head.
+- Require behavior-specific `oracle_gap` evidence for Phase 1 and suppress correlation-only or already-operational duplicate controls.
+- Add an external recovery journal and recoverable repository-plus-evidence transaction with failure injection across every mutation and persistence boundary.
+- Render tested and source-head SHAs safely in `GITHUB_STEP_SUMMARY` and persist exact run identity with generated report artifacts.
+
 ## 0.3.0
 
 - Add Repository Model `1.1.0` with explicit workspace boundaries and bounded semantic graphs.
