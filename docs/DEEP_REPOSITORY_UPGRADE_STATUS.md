@@ -37,11 +37,11 @@ not_applicable
 | 15 | Actionable diagnostics | verified | diagnostic contract and repair hints | `test_diagnostics_are_repair_oriented` |
 | 16 | Measurement and validation | verified | deterministic/hash/schema/mode/cold-start/telemetry tests | `tests/test_repository_upgrade*.py` |
 | 17 | Repository memory and traceability | verified | this file | direct content inspection plus CI artifact generation |
-| 18 | Documentation | implemented_unverified | README, AGENTS, architecture, prompt, protocol, changelog | workflow unit tests cover repository files |
+| 18 | Documentation | implemented_unverified | README, AGENTS, architecture, prompt, protocol, changelog | files are exercised by repository CI, but semantic documentation completeness is not automatically proven |
 
 ## Verification evidence
 
-Executed before repository write:
+Executed locally before repository write:
 
 ```text
 python -m unittest tests.test_repository_upgrade tests.test_repository_upgrade_schemas -v
@@ -49,7 +49,9 @@ Ran 20 tests
 OK
 ```
 
-This is unit and fixture evidence. Exact-head GitHub Actions validation must be recorded in the PR before describing the branch as fully CI-verified.
+GitHub Actions also executes the complete repository suite, generates the legacy report plus both new operating-mode reports, checks Scope Claim Audit examples, and uploads the report artifacts.
+
+The exact head SHA, workflow run ID, and final conclusion are maintained in pull request `#8`. They are not embedded here because changing this file creates a new head SHA and would make an embedded exact-head claim self-referential and immediately stale.
 
 ## Backward compatibility
 
@@ -80,4 +82,4 @@ This is unit and fixture evidence. Exact-head GitHub Actions validation must be 
 
 ## Next safe continuation step
 
-After the pull request workflow is green on the exact head SHA, record the run ID and exact SHA in the PR report. Do not merge automatically.
+Review pull request `#8` and its exact-head workflow evidence. Merge remains a human decision; this repository automation must not merge or enable auto-merge.
