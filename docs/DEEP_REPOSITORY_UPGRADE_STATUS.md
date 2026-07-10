@@ -25,9 +25,9 @@ Status vocabulary: `not_started`, `in_progress`, `implemented_unverified`, `veri
 | Staged upgrade plan | verified | `build_staged_plan` | Phase 1, Phase 2, and intentionally uncovered/rejected sections are schema-valid. |
 | Schema evolution | verified | `schemas/repository_upgrade_report.schema.json` | Closed nested contracts, mode conditionals, profile schema, positive and negative tests. |
 | Actionable diagnostics | verified | Capability limitations and CLI stable error prefix | Tests cover operational-vs-nominal diagnostics; further per-ecosystem wording can be expanded. |
-| Measurement and validation | verified | Unit and schema tests; workflow generation | Current proof is fixture/local behavior plus pending GitHub Actions exact-head execution. |
+| Measurement and validation | verified | Unit and schema tests; exact-head GitHub Actions | Workflow run `29103743326` succeeded on implementation head `28c8a300a6c68750e03feca9c434d7730c722343`; every validation and artifact step passed. |
 | Durable memory | verified | This file | Update after each implementation slice and exact-head validation. |
-| Documentation | implemented_unverified | README, overview, protocol, prompt, changelog | Must be rechecked by repository CI after commit. |
+| Documentation | verified | README, overview, protocol, prompt, changelog | Included in the successful exact-head workflow validation on implementation head `28c8a300a6c68750e03feca9c434d7730c722343`. |
 
 ## Implemented files
 
@@ -46,11 +46,11 @@ Status vocabulary: `not_started`, `in_progress`, `implemented_unverified`, `veri
 
 ## Intentionally deferred
 
-- Direct connector/API collection of workflow telemetry inside the local CLI. The CLI accepts connector-fed teletry without making authentication mandatory.
+- Direct connector/API collection of workflow telemetry inside the local CLI. The CLI accepts connector-fed telemetry without making authentication mandatory.
 - Automatic implementation of arbitrary Phase 1 patches. The current slice produces executable, evidence-based objectives; repository-specific patching remains an agent operation.
 - Full YAML semantic evaluation, dynamic imports, runtime framework introspection, and production credentials.
 - Empirical risk-reduction percentages. The system uses explicit bounded ordinal judgments instead.
 
 ## Next safe continuation step
 
-After GitHub Actions validates the exact branch head, pilot deep mode against several materially different target repositories and add only evidence-backed detector/profile refinements.
+Pilot deep mode against several materially different target repositories and add only evidence-backed detector/profile refinements. The implementation head passed GitHub Actions run `29103743326`; this evidence-only status update must also remain green on the final PR head.
