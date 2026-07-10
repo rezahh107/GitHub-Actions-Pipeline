@@ -18,7 +18,7 @@ jobs:
   repository-validation:
     name: repository-validation
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout
         # actions/checkout v4.2.2
