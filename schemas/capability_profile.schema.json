@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "capabilities": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "applies_to_archetypes": {
+            "items": {"minLength": 1, "type": "string"},
+            "type": "array",
+            "uniqueItems": true
+          },
+          "capability_id": {"pattern": "^[a-z][a-z0-9_]*$", "type": "string"},
+          "cost": {"enum": ["low", "medium", "high"]},
+          "detector": {"pattern": "^[a-z][a-z0-9_]*$", "type": "string"},
+          "importance": {"enum": ["low", "medium", "high", "critical"]},
+          "name": {"minLength": 1, "type": "string"},
+          "noise_risk": {"enum": ["low", "medium", "high"]},
+          "phase_hint": {"enum": [1, 2]},
+          "recommendation": {"minLength": 1, "type": "string"}
+        },
+        "required": ["capability_id", "name", "importance", "detector", "recommendation", "phase_hint", "cost", "noise_risk"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "match": {
+      "additionalProperties": false,
+      "properties": {
+        "always": {"type": "boolean"},
+        "archetypes_any": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "ecosystems_any": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true}
+      },
+      "required": ["always", "ecosystems_any", "archetypes_any"],
+      "type": "object"
+    },
+    "profile_id": {"pattern": "^[a-z0-9][a-z0-9-]*$", "type": "string"},
+    "profile_version": {"const": "1"}
+  },
+  "required": ["profile_version", "profile_id", "match", "capabilities"],
+  "title": "Capability Profile",
+  "type": "object"
+}

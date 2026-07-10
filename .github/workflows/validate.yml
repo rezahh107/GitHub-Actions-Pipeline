@@ -46,6 +46,14 @@ jobs:
           CI_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: python tools/ci_detective.py --repo-root . --out "$RUNNER_TEMP/ci_detective_report.json"
 
+      - name: Generate Minimal Safe CI report
+        run: |
+          python tools/repository_upgrade.py             --repo-root .             --repository "${{ github.repository }}"             --mode minimal-safe-ci             --out "$RUNNER_TEMP/repository_upgrade.minimal.json"             --summary-out "$RUNNER_TEMP/repository_upgrade.minimal.fa.md"
+
+      - name: Generate Deep Repository Upgrade report
+        run: |
+          python tools/repository_upgrade.py             --repo-root .             --repository "${{ github.repository }}"             --mode deep-repository-upgrade             --out "$RUNNER_TEMP/repository_upgrade.deep.json"             --summary-out "$RUNNER_TEMP/repository_upgrade.deep.fa.md"
+
       - name: Check Scope Claim Audit examples
         run: |
           python tools/scope_claim_audit.py --check examples/scope_claim_audit.example.json
@@ -60,18 +68,23 @@ jobs:
           echo "## GitHub Actions Pipeline validation" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- Unit tests completed." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Tested SHA: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Source head SHA: \`${{ github.event.pull_request.head.sha || github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- CI detective report generated as an artifact." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tested SHA: `${{ github.sha }}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source head SHA: `${{ github.event.pull_request.head.sha || github.sha }}`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- CI detective report generated." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Minimal Safe CI and Deep Repository Upgrade reports generated." >> "$GITHUB_STEP_SUMMARY"
           echo "- Scope Claim Audit examples checked." >> "$GITHUB_STEP_SUMMARY"
-          echo "- Scope Claim Audit advisory summary generated as an artifact." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload CI detective report
+      - name: Upload CI intelligence reports
         # actions/upload-artifact v4.6.2
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: ci-detective-report
-          path: ${{ runner.temp }}/ci_detective_report.json
+          name: ci-intelligence-reports
+          path: |
+            ${{ runner.temp }}/ci_detective_report.json
+            ${{ runner.temp }}/repository_upgrade.minimal.json
+            ${{ runner.temp }}/repository_upgrade.minimal.fa.md
+            ${{ runner.temp }}/repository_upgrade.deep.json
+            ${{ runner.temp }}/repository_upgrade.deep.fa.md
           retention-days: 14
           if-no-files-found: error
 

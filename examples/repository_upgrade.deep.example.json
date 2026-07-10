@@ -1,0 +1,18 @@
+{
+  "capability_gaps": [{"capability_id": "documentation_validation", "evidence": [], "implementation_cost": "low", "importance": "medium", "limitations": ["No machine-checkable documentation validation was detected."], "name": "Documentation contract validation", "noise_risk": "medium", "phase_hint": 2, "recommendation": "Validate links and structured examples where machine-checkable.", "source_profile": "documentation-only", "state": "absent"}],
+  "current_engineering_baseline": {"archetypes": ["documentation-only-repository"], "capability_state_counts": {"absent": 1, "nominal": 0, "not_applicable": 0, "operational": 0, "operational_but_weak": 0, "partial": 0, "unknown": 0}, "component_count": 1, "gaps": ["documentation_validation"], "operational_capabilities": [], "workflow_count": 0},
+  "generated_at": "2026-07-10T00:00:00Z",
+  "historical_analysis": {"co_change_pairs": [], "commit_limit": 200, "production_changes_without_tests": [], "reason": "Example has no Git history.", "repeated_fix_subsystems": [], "revert_signals": [], "status": "unavailable", "workflow_configuration_churn": []},
+  "intentionally_uncovered": ["Remote runtime behavior."],
+  "limitations": ["No telemetry supplied."],
+  "mode": "deep-repository-upgrade",
+  "mode_policy": {"allow_testability_changes": true, "include_baseline_capabilities": true, "maximum_phase1_items": 4, "minimum_evidence": "medium"},
+  "recommendations": [{"action": "Validate links and structured examples where machine-checkable.", "capability_id": "documentation_validation", "evidence": ["No machine-checkable documentation validation was detected."], "problem": "Capability state is absent.", "ranking": {"evidence_strength": "high", "execution_time": "low", "implementation_complexity": "low", "invariant_criticality": "medium", "maintainability_improvement": "high", "noise_risk": "medium", "ongoing_maintenance_cost": "low", "overlap_with_existing_controls": "low", "priority_band": "medium", "regression_detection_value": "high", "reversibility": "high", "risk_reduction": "medium", "silent_failure_exposure": "medium"}, "recommendation_id": "REC-001", "source": "baseline_capability", "testability_change": false, "title": "Close capability gap: Documentation contract validation"}],
+  "report_sha256": "a3fd4a46c5f0afe07ec668990c96ec3be6d90aaebdcc0538105870fa22b0748f",
+  "report_version": "0.2.0",
+  "repository": "rezahh107/example-docs",
+  "repository_model": {"archetypes": ["documentation-only-repository"], "components": [{"archetypes": [], "build_commands": [], "component_id": ".", "ecosystems": [], "entry_points": [], "evidence_state": "observed", "frameworks": [], "generated_artifacts": [], "limitations": [], "lockfiles": [], "manifests": [], "release_files": [], "root": ".", "schemas": [], "source_files": [], "test_commands": [], "test_files": [], "validators": []}], "file_count": 1, "languages": [], "model_version": "1", "repository_root": ".", "source_to_test_relationships": [], "unresolved_evidence": ["Remote workflow telemetry is not collected."], "workflows": []},
+  "selected_profiles": ["documentation-only", "generic-repository"],
+  "staged_upgrade_plan": {"phase_1": [], "phase_2": [{"objective": "Validate links and structured examples where machine-checkable.", "recommendation_id": "REC-001", "reconsider_when": "When documentation contracts are machine-checkable."}], "rejected_or_intentionally_uncovered": []},
+  "workflow_telemetry": {"reason": "No telemetry supplied.", "runs": [], "status": "not_collected"}
+}

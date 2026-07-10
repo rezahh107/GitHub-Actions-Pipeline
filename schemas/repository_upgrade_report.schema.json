@@ -1,0 +1,213 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "allOf": [
+    {"if": {"properties": {"mode": {"const": "minimal-safe-ci"}}}, "then": {"properties": {"mode_policy": {"properties": {"allow_testability_changes": {"const": false}, "include_baseline_capabilities": {"const": false}}}, "staged_upgrade_plan": {"properties": {"phase_2": {"maxItems": 0}}}}}},
+    {"if": {"properties": {"mode": {"const": "deep-repository-upgrade"}}}, "then": {"properties": {"mode_policy": {"properties": {"allow_testability_changes": {"const": true}, "include_baseline_capabilities": {"const": true}}}}}}
+  ],
+  "definitions": {
+    "stringArray": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "modePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "allow_testability_changes": {"type": "boolean"},
+        "include_baseline_capabilities": {"type": "boolean"},
+        "maximum_phase1_items": {"maximum": 10, "minimum": 1, "type": "integer"},
+        "minimum_evidence": {"enum": ["low", "medium", "high"]}
+      },
+      "required": ["include_baseline_capabilities", "maximum_phase1_items", "allow_testability_changes", "minimum_evidence"],
+      "type": "object"
+    },
+    "component": {
+      "additionalProperties": false,
+      "properties": {
+        "archetypes": {"$ref": "#/definitions/stringArray"},
+        "build_commands": {"$ref": "#/definitions/stringArray"},
+        "component_id": {"minLength": 1, "type": "string"},
+        "ecosystems": {"$ref": "#/definitions/stringArray"},
+        "entry_points": {"$ref": "#/definitions/stringArray"},
+        "evidence_state": {"enum": ["observed", "derived", "inferred", "unavailable", "not_applicable"]},
+        "frameworks": {"$ref": "#/definitions/stringArray"},
+        "generated_artifacts": {"$ref": "#/definitions/stringArray"},
+        "limitations": {"$ref": "#/definitions/stringArray"},
+        "lockfiles": {"$ref": "#/definitions/stringArray"},
+        "manifests": {"$ref": "#/definitions/stringArray"},
+        "release_files": {"$ref": "#/definitions/stringArray"},
+        "root": {"minLength": 1, "type": "string"},
+        "schemas": {"$ref": "#/definitions/stringArray"},
+        "source_files": {"$ref": "#/definitions/stringArray"},
+        "test_commands": {"$ref": "#/definitions/stringArray"},
+        "test_files": {"$ref": "#/definitions/stringArray"},
+        "validators": {"$ref": "#/definitions/stringArray"}
+      },
+      "required": ["component_id", "root", "evidence_state", "ecosystems", "frameworks", "archetypes", "manifests", "lockfiles", "entry_points", "test_files", "test_commands", "build_commands", "validators", "schemas", "generated_artifacts", "release_files", "source_files", "limitations"],
+      "type": "object"
+    },
+    "workflow": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {"$ref": "#/definitions/stringArray"},
+        "commands": {"$ref": "#/definitions/stringArray"},
+        "evidence_state": {"enum": ["observed", "derived", "inferred", "unavailable", "not_applicable"]},
+        "jobs": {"$ref": "#/definitions/stringArray"},
+        "limitations": {"$ref": "#/definitions/stringArray"},
+        "name": {"type": ["string", "null"]},
+        "path": {"minLength": 1, "type": "string"},
+        "permissions": {"additionalProperties": {"enum": ["read", "write", "none"]}, "type": "object"},
+        "triggers": {"$ref": "#/definitions/stringArray"}
+      },
+      "required": ["path", "name", "triggers", "permissions", "jobs", "commands", "actions", "evidence_state", "limitations"],
+      "type": "object"
+    },
+    "sourceTestRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {"enum": ["low", "medium", "high"]},
+        "evidence_state": {"const": "derived"},
+        "source": {"minLength": 1, "type": "string"},
+        "tests": {"$ref": "#/definitions/stringArray"}
+      },
+      "required": ["source", "tests", "evidence_state", "confidence"],
+      "type": "object"
+    },
+    "repositoryModel": {
+      "additionalProperties": false,
+      "properties": {
+        "archetypes": {"$ref": "#/definitions/stringArray"},
+        "components": {"items": {"$ref": "#/definitions/component"}, "type": "array"},
+        "file_count": {"minimum": 0, "type": "integer"},
+        "languages": {"$ref": "#/definitions/stringArray"},
+        "model_version": {"const": "1"},
+        "repository_root": {"const": "."},
+        "source_to_test_relationships": {"items": {"$ref": "#/definitions/sourceTestRelationship"}, "type": "array"},
+        "unresolved_evidence": {"$ref": "#/definitions/stringArray"},
+        "workflows": {"items": {"$ref": "#/definitions/workflow"}, "type": "array"}
+      },
+      "required": ["model_version", "repository_root", "file_count", "languages", "archetypes", "components", "workflows", "source_to_test_relationships", "unresolved_evidence"],
+      "type": "object"
+    },
+    "workflowTelemetry": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {"minLength": 1, "type": "string"},
+        "runs": {"items": {"type": "object"}, "type": "array"},
+        "status": {"enum": ["available", "not_collected", "unavailable", "partial"]}
+      },
+      "required": ["status", "reason", "runs"],
+      "type": "object"
+    },
+    "capability": {
+      "additionalProperties": false,
+      "properties": {
+        "capability_id": {"pattern": "^[a-z][a-z0-9_]*$", "type": "string"},
+        "evidence": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+        "implementation_cost": {"enum": ["low", "medium", "high"]},
+        "importance": {"enum": ["low", "medium", "high", "critical"]},
+        "limitations": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+        "name": {"minLength": 1, "type": "string"},
+        "noise_risk": {"enum": ["low", "medium", "high"]},
+        "phase_hint": {"enum": [1, 2]},
+        "recommendation": {"minLength": 1, "type": "string"},
+        "source_profile": {"minLength": 1, "type": "string"},
+        "state": {"enum": ["absent", "nominal", "partial", "operational", "operational_but_weak", "unknown", "not_applicable"]}
+      },
+      "required": ["capability_id", "name", "state", "importance", "evidence", "limitations", "source_profile", "recommendation", "phase_hint", "implementation_cost", "noise_risk"],
+      "type": "object"
+    },
+    "ranking": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_strength": {"enum": ["low", "medium", "high"]},
+        "execution_time": {"enum": ["low", "medium", "high"]},
+        "implementation_complexity": {"enum": ["low", "medium", "high"]},
+        "invariant_criticality": {"enum": ["low", "medium", "high", "critical"]},
+        "maintainability_improvement": {"enum": ["low", "medium", "high"]},
+        "noise_risk": {"enum": ["low", "medium", "high"]},
+        "ongoing_maintenance_cost": {"enum": ["low", "medium", "high"]},
+        "overlap_with_existing_controls": {"enum": ["low", "medium", "high", "unknown"]},
+        "priority_band": {"enum": ["low", "medium", "high", "critical"]},
+        "regression_detection_value": {"enum": ["low", "medium", "high", "critical"]},
+        "reversibility": {"enum": ["low", "medium", "high"]},
+        "risk_reduction": {"enum": ["low", "medium", "high", "critical"]},
+        "silent_failure_exposure": {"enum": ["low", "medium", "high", "critical"]}
+      },
+      "required": ["risk_reduction", "invariant_criticality", "regression_detection_value", "silent_failure_exposure", "evidence_strength", "maintainability_improvement", "implementation_complexity", "execution_time", "noise_risk", "ongoing_maintenance_cost", "reversibility", "overlap_with_existing_controls", "priority_band"],
+      "type": "object"
+    },
+    "recommendation": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {"minLength": 1, "type": "string"},
+        "capability_id": {"type": ["string", "null"]},
+        "evidence": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+        "problem": {"minLength": 1, "type": "string"},
+        "ranking": {"$ref": "#/definitions/ranking"},
+        "recommendation_id": {"pattern": "^REC-[0-9]{3,}$", "type": "string"},
+        "source": {"enum": ["observed_failure", "structural_invariant", "baseline_capability"]},
+        "testability_change": {"type": "boolean"},
+        "title": {"minLength": 1, "type": "string"}
+      },
+      "required": ["recommendation_id", "source", "capability_id", "title", "problem", "evidence", "action", "testability_change", "ranking"],
+      "type": "object"
+    },
+    "phase1Item": {
+      "additionalProperties": false,
+      "properties": {
+        "objective": {"minLength": 1, "type": "string"},
+        "recommendation_id": {"pattern": "^REC-[0-9]{3,}$", "type": "string"},
+        "validation": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array"}
+      },
+      "required": ["recommendation_id", "objective", "validation"],
+      "type": "object"
+    },
+    "phase2Item": {
+      "additionalProperties": false,
+      "properties": {
+        "objective": {"minLength": 1, "type": "string"},
+        "recommendation_id": {"pattern": "^REC-[0-9]{3,}$", "type": "string"},
+        "reconsider_when": {"minLength": 1, "type": "string"}
+      },
+      "required": ["recommendation_id", "objective", "reconsider_when"],
+      "type": "object"
+    },
+    "stagedPlan": {
+      "additionalProperties": false,
+      "properties": {
+        "phase_1": {"items": {"$ref": "#/definitions/phase1Item"}, "type": "array"},
+        "phase_2": {"items": {"$ref": "#/definitions/phase2Item"}, "type": "array"},
+        "rejected_or_intentionally_uncovered": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {"candidate": {"minLength": 1, "type": "string"}, "reason": {"minLength": 1, "type": "string"}},
+            "required": ["candidate", "reason"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["phase_1", "phase_2", "rejected_or_intentionally_uncovered"],
+      "type": "object"
+    }
+  },
+  "properties": {
+    "capability_gaps": {"items": {"$ref": "#/definitions/capability"}, "type": "array"},
+    "current_engineering_baseline": {"type": "object"},
+    "generated_at": {"pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$", "type": "string"},
+    "historical_analysis": {"type": "object"},
+    "intentionally_uncovered": {"$ref": "#/definitions/stringArray"},
+    "limitations": {"$ref": "#/definitions/stringArray"},
+    "mode": {"enum": ["minimal-safe-ci", "deep-repository-upgrade"]},
+    "mode_policy": {"$ref": "#/definitions/modePolicy"},
+    "recommendations": {"items": {"$ref": "#/definitions/recommendation"}, "type": "array"},
+    "report_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "report_version": {"const": "0.2.0"},
+    "repository": {"minLength": 1, "type": "string"},
+    "repository_model": {"$ref": "#/definitions/repositoryModel"},
+    "selected_profiles": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "staged_upgrade_plan": {"$ref": "#/definitions/stagedPlan"},
+    "workflow_telemetry": {"$ref": "#/definitions/workflowTelemetry"}
+  },
+  "required": ["report_version", "generated_at", "report_sha256", "repository", "mode", "mode_policy", "repository_model", "selected_profiles", "workflow_telemetry", "historical_analysis", "current_engineering_baseline", "capability_gaps", "recommendations", "staged_upgrade_plan", "intentionally_uncovered", "limitations"],
+  "title": "Repository Upgrade Report",
+  "type": "object"
+}
