@@ -10,13 +10,15 @@ from tools import ci_schedule_semantics as _semantics
 from tools import ci_workflow_schedule_patch as _schedule
 from tools import ci_workflow_structure as _structure
 from tools.ci_calendar_bitsets import (
+    adjacent_date_masks,
     install_calendar_bitsets,
+    matching_dates,
     predicate_key,
     predicate_work_units,
 )
 from tools.ci_pinned_timezone import validate_pinned_timezone
 
-CONTRACT_VERSION = "1.0.0"
+CONTRACT_VERSION = "1.1.0"
 WORKFLOW_LIMIT = 4096
 REPOSITORY_LIMIT = 8192
 _BASE_PARSE: Callable[..., object] | None = None
@@ -51,6 +53,13 @@ class _RepoState:
     ledger: _Ledger
 
 
+@dataclass(frozen=True)
+class _CanonicalSchedule:
+    timezone: str
+    times: tuple[int, ...]
+    predicate: tuple[object, ...]
+
+
 _STATE: ContextVar[_RepoState | None] = ContextVar("schedule_repository_budget", default=None)
 
 
@@ -65,15 +74,15 @@ def _repo_ledger(reference: str) -> _Ledger:
     return state.ledger
 
 
-def _times(parsed: object) -> list[int]:
-    return sorted(hour * 60 + minute for hour in parsed.hour.values for minute in parsed.minute.values)
+def _times(parsed: object) -> tuple[int, ...]:
+    return tuple(sorted(hour * 60 + minute for hour in parsed.hour.values for minute in parsed.minute.values))
 
 
-def _charge(entry: object, workflow: _Ledger, repository: _Ledger) -> None:
+def _charge(entry: object, workflow: _Ledger, repository: _Ledger) -> object | None:
     for ledger in (workflow, repository):
         ledger.charge(1, "reading a schedule entry")
     if not isinstance(entry, str):
-        return
+        return None
     parsed = _semantics.parse_cron_expression(entry)
     for ledger in (workflow, repository):
         ledger.charge(8 + len(entry), "parsing a distinct cron", ("cron", entry))
@@ -86,6 +95,89 @@ def _charge(entry: object, workflow: _Ledger, repository: _Ledger) -> None:
                 "evaluating a distinct Gregorian predicate",
                 ("predicate",) + key,
             )
+    return parsed
+
+
+def _canonical_schedule(parsed: object, timezone: str) -> _CanonicalSchedule:
+    return _CanonicalSchedule(
+        timezone=timezone,
+        times=_times(parsed),
+        predicate=predicate_key(parsed),
+    )
+
+
+def _charge_comparison(workflow: _Ledger, repository: _Ledger, reason: str) -> None:
+    for ledger in (workflow, repository):
+        ledger.charge(1, reason)
+
+
+def _aggregate_interval(schedules: list[_CanonicalSchedule], workflow: _Ledger, repository: _Ledger) -> int | None:
+    """Return the minimum sub-five-minute gap over the union of all schedules."""
+    if not schedules:
+        return None
+    timezones = sorted({item.timezone for item in schedules})
+    if len(timezones) != 1:
+        raise _semantics.ScheduleSemanticError(
+            "WORKFLOW_SCHEDULE_TIMEZONE_SET_UNSUPPORTED",
+            "Multiple schedule timezones cannot be compared on one deterministic timeline; "
+            f"observed {timezones!r}.",
+        )
+
+    unique = sorted(
+        set(schedules),
+        key=lambda item: (item.timezone, item.times, item.predicate),
+    )
+    occurrence_masks: dict[int, int] = {}
+    for item in unique:
+        for ledger in (workflow, repository):
+            ledger.charge(
+                predicate_work_units(item.predicate),
+                "evaluating a distinct Gregorian predicate",
+                ("predicate",) + item.predicate,
+            )
+            ledger.charge(
+                len(item.times),
+                "projecting a distinct schedule into aggregate occurrence times",
+                ("aggregate-schedule", item.timezone, item.times, item.predicate),
+            )
+        date_mask = matching_dates(item.predicate)
+        for minute in item.times:
+            occurrence_masks[minute] = occurrence_masks.get(minute, 0) | date_mask
+
+    times = sorted(occurrence_masks)
+    available = set(times)
+    for interval in range(1, _semantics.MINIMUM_INTERVAL_MINUTES):
+        for left in times:
+            target = left + interval
+            if target < 1440:
+                if target not in available:
+                    continue
+                _charge_comparison(
+                    workflow, repository, "comparing aggregate same-day occurrences"
+                )
+                if occurrence_masks[left] & occurrence_masks[target]:
+                    return interval
+                continue
+
+            right = target - 1440
+            if right not in available:
+                continue
+            _charge_comparison(
+                workflow, repository, "comparing aggregate cross-midnight occurrences"
+            )
+            if adjacent_date_masks(occurrence_masks[left], occurrence_masks[right]):
+                return interval
+    return None
+
+
+def _validate_aggregate(schedules: list[_CanonicalSchedule], workflow: _Ledger, repository: _Ledger) -> None:
+    interval = _aggregate_interval(schedules, workflow, repository)
+    if interval is not None:
+        raise _semantics.ScheduleSemanticError(
+            "WORKFLOW_SCHEDULE_INTERVAL_TOO_FREQUENT",
+            f"the union of schedule entries can run {interval} minute(s) apart; "
+            f"the minimum supported interval is {_semantics.MINIMUM_INTERVAL_MINUTES} minutes.",
+        )
 
 
 def _diagnostic(exc: _semantics.ScheduleSemanticError, reference: str) -> dict[str, object]:
@@ -102,26 +194,40 @@ def _schedule_errors(trigger: object, *, reference: str) -> list[dict[str, objec
     workflow = _Ledger("workflow", WORKFLOW_LIMIT)
     repository = _repo_ledger(reference)
     diagnostics: list[dict[str, object]] = []
+    canonical: list[_CanonicalSchedule] = []
+    structural_incomplete = False
     for index, entry in enumerate(trigger["schedule"]):
         if not isinstance(entry, dict) or "cron" not in entry or any(
             key not in {"cron", "timezone"} for key in entry
         ):
+            structural_incomplete = True
             continue
         base = f"{reference}.schedule[{index}]"
         try:
-            _charge(entry["cron"], workflow, repository)
+            parsed = _charge(entry["cron"], workflow, repository)
             _schedule.validate_cron_expression(entry["cron"])
+            timezone = entry.get("timezone", "UTC")
             if "timezone" in entry:
-                timezone = entry["timezone"]
                 if isinstance(timezone, str):
                     for ledger in (workflow, repository):
                         ledger.charge(4, "validating a distinct timezone", ("timezone", timezone))
                 validate_pinned_timezone(timezone)
+            if parsed is not None and isinstance(timezone, str):
+                canonical.append(_canonical_schedule(parsed, timezone))
         except _semantics.ScheduleSemanticError as exc:
             field = "timezone" if exc.code.startswith("WORKFLOW_SCHEDULE_TIMEZONE") else "cron"
             diagnostics.append(_diagnostic(exc, f"{base}.{field}"))
             if exc.code == "WORKFLOW_SCHEDULE_SEMANTIC_WORK_LIMIT_EXCEEDED":
                 break
+
+    if diagnostics:
+        return diagnostics
+    if structural_incomplete:
+        return []
+    try:
+        _validate_aggregate(canonical, workflow, repository)
+    except _semantics.ScheduleSemanticError as exc:
+        diagnostics.append(_diagnostic(exc, f"{reference}.schedule"))
     return diagnostics
 
 
