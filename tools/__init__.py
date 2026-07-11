@@ -13,3 +13,10 @@ from tools.ci_workflow_trigger_patch import install_workflow_trigger_validation 
 
 _install_workflow_trigger_validation()
 del _install_workflow_trigger_validation
+
+# Validate represented schedule semantics after the event/property registry is
+# installed and before repository-model modules bind ``parse_workflow``.
+from tools.ci_workflow_schedule_patch import install_workflow_schedule_validation as _install_workflow_schedule_validation
+
+_install_workflow_schedule_validation()
+del _install_workflow_schedule_validation

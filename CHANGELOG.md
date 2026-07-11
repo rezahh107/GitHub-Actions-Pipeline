@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Validate represented GitHub Actions schedules with a bounded five-field POSIX cron parser, a five-minute minimum interval gate, and fail-closed IANA timezone verification before execution evidence.
 - Validate GitHub Actions triggers through a versioned event-to-schema registry; unsupported event/property combinations, malformed dispatch/call inputs, invalid activities, and conflicting filters now invalidate the whole workflow before execution evidence.
 - Validate every admitted nested GitHub Actions mapping or sequence through a versioned schema coverage map before command parsing; malformed or unrepresented trigger, strategy, defaults, concurrency, environment, snapshot, container, service, and dynamic-map structures now invalidate the whole workflow for execution evidence.
 - Validate versioned workflow-root, normal-job, reusable-job, and step property sets before command parsing; unsupported properties, incompatible execution forms, and YAML merge keys now invalidate the whole workflow for execution evidence.
