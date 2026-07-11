@@ -220,7 +220,7 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
                     ]),
                 },
             )
-            with patch.object(resource, "REPOSITORY_LIMIT", 170):
+            with patch.object(resource, "REPOSITORY_LIMIT", 200):
                 model = build_repository_model(root)
         workflows = {item["path"]: item for item in model["workflows"]}
         self.assertEqual(workflows[".github/workflows/a.yml"]["parse_status"], "parsed")
