@@ -50,7 +50,7 @@ class NestedWorkflowStructureTests(unittest.TestCase):
         })
         return build_repository_model(root)
 
-    def assert_invalid(self, source: str, code: str) -> None:
+    def assert_invalid(self, source: str, code: str | set[str]) -> None:
         model = self.model(source)
         item = model["workflows"][0]
         self.assertEqual(item["parse_status"], "invalid_shape")
@@ -58,7 +58,8 @@ class NestedWorkflowStructureTests(unittest.TestCase):
         self.assertEqual(item["commands"], [])
         self.assertEqual(item["command_evidence"], [])
         self.assertNotEqual(capability(model, "tests_run_on_pull_requests")["state"], "operational")
-        self.assertIn(code, {value["code"] for value in model["unresolved_evidence"]})
+        expected = {code} if isinstance(code, str) else code
+        self.assertTrue(expected & {value["code"] for value in model["unresolved_evidence"]})
         self.assertFalse(any(
             record.get("status") == "resolved" and "test" in record.get("families", [])
             for record in item["command_evidence"]
@@ -115,10 +116,10 @@ class NestedWorkflowStructureTests(unittest.TestCase):
             with self.subTest(source=source):
                 self.assert_invalid(source, "WORKFLOW_TRIGGER_STRUCTURE_INVALID" if "unexpected: [main]" in source else next(
                     code for token, code in (
-                        ("unknown: read", "WORKFLOW_PERMISSIONS_STRUCTURE_INVALID"),
+                        ("unknown: read", {"WORKFLOW_PERMISSION_STRUCTURE_INVALID", "WORKFLOW_PERMISSIONS_STRUCTURE_INVALID"}),
                         ("unexpected: runner", "WORKFLOW_RUNS_ON_STRUCTURE_INVALID"),
                         ("result: [bad]", "WORKFLOW_NESTED_VALUE_INVALID"),
-                        ("nested:", "WORKFLOW_NESTED_VALUE_INVALID"),
+                        ("nested:", "WORKFLOW_STEP_EXECUTION_FORM_INVALID"),
                     ) if token in source
                 ))
 

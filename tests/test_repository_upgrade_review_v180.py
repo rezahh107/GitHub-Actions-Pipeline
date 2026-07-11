@@ -91,7 +91,7 @@ class OperationalCommandEvidenceTests(unittest.TestCase):
             self.assertIn("WORKFLOW_JOB_NOT_RUNNABLE", codes)
             self.assertIn("WORKFLOW_TEST_TARGET_UNRESOLVED", codes)
 
-    def test_reusable_and_malformed_siblings_do_not_supply_evidence_but_valid_job_does(self):
+    def test_reusable_job_is_unresolved_but_malformed_sibling_invalidates_workflow(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             write_files(root, {"tests/test_x.py": "def test_x(): assert True\n", ".github/workflows/ci.yml": """on: [pull_request]
@@ -109,11 +109,18 @@ jobs:
       - run: pytest tests/test_x.py
 """})
             model = build_repository_model(root)
-            self.assertEqual(capability(model, "tests_run_on_pull_requests")["state"], "operational")
+            self.assertNotEqual(
+                capability(model, "tests_run_on_pull_requests")["state"],
+                "operational",
+            )
+            workflow = model["workflows"][0]
+            self.assertEqual(workflow["parse_status"], "invalid_shape")
+            self.assertEqual(workflow["jobs"], [])
+            self.assertEqual(workflow["commands"], [])
+            self.assertEqual(workflow["command_evidence"], [])
             codes = {item["code"] for item in model["unresolved_evidence"]}
-            self.assertIn("REUSABLE_WORKFLOW_JOB_UNRESOLVED", codes)
-            self.assertIn("WORKFLOW_JOB_NOT_RUNNABLE", codes)
-            self.assertEqual(model["test_suites"]["commands_observed_in_ci"], ["pytest tests/test_x.py"])
+            self.assertIn("WORKFLOW_RUNS_ON_STRUCTURE_INVALID", codes)
+            self.assertEqual(model["test_suites"]["commands_observed_in_ci"], [])
 
     def test_supported_behavioral_controls_remain_operational(self):
         cases = (("pytest tests/test_x.py", "tests/test_x.py"), ("python -m unittest discover -s tests", "tests/test_x.py"), ("npm test", "tests/app.test.js"), ("cargo test", "tests/core.rs"), ("go test ./...", "pkg/core_test.go"), ("mvn test", "src/test/java/AppTest.java"), ("./gradlew test", "src/test/java/AppTest.java"))
