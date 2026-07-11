@@ -115,6 +115,7 @@ class PinnedTimezoneIdentityTests(unittest.TestCase):
 class CumulativeScheduleBudgetTests(unittest.TestCase):
     def setUp(self) -> None:
         calendar.calendar_masks.cache_clear()
+        calendar.matching_dates.cache_clear()
         calendar.consecutive_dates.cache_clear()
         calendar._cached_parse.cache_clear()
         resource._STATE.set(None)
@@ -205,16 +206,20 @@ class ResourceBoundaryIntegrationTests(unittest.TestCase):
                 )
 
     def test_ordinary_and_worst_case_valid_controls_remain_operational(self):
-        model = self.model([
+        controls = (
             ("*/5 * * * *", "Etc/UTC"),
+            ("0 * * * *", "UTC"),
             (WORST_CASE, "America/New_York"),
             ("30 5 * * MON", "Asia/Baku"),
-        ])
-        self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
-        self.assertEqual(
-            capability(model, "tests_run_on_pull_requests")["state"],
-            "operational",
         )
+        for cron, timezone in controls:
+            with self.subTest(timezone=timezone):
+                model = self.model([(cron, timezone)])
+                self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
+                self.assertEqual(
+                    capability(model, "tests_run_on_pull_requests")["state"],
+                    "operational",
+                )
 
 
 if __name__ == "__main__":
