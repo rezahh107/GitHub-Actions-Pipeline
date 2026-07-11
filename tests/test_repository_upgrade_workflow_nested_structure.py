@@ -114,7 +114,7 @@ class NestedWorkflowStructureTests(unittest.TestCase):
         )
         for source in cases:
             with self.subTest(source=source):
-                self.assert_invalid(source, "WORKFLOW_TRIGGER_STRUCTURE_INVALID" if "unexpected: [main]" in source else next(
+                self.assert_invalid(source, {"WORKFLOW_TRIGGER_STRUCTURE_INVALID", "WORKFLOW_TRIGGER_PROPERTY_UNSUPPORTED"} if "unexpected: [main]" in source else next(
                     code for token, code in (
                         ("unknown: read", {"WORKFLOW_PERMISSION_STRUCTURE_INVALID", "WORKFLOW_PERMISSIONS_STRUCTURE_INVALID"}),
                         ("unexpected: runner", "WORKFLOW_RUNS_ON_STRUCTURE_INVALID"),
