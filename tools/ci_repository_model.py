@@ -18,11 +18,11 @@ from tools.ci_repository_collectors import (
     _text,
     collect_repository_files,
     expand_workspace_roots,
-    parse_workflow,
     rel,
 )
 from tools.ci_semantic_analysis import analyze_semantics
 from tools.ci_upgrade_models import diagnostic, evidence
+from tools.ci_workflow_structure import parse_workflow
 
 
 def _records(workflows: list[dict[str, object]]) -> list[dict[str, object]]:
