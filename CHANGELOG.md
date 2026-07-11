@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Validate GitHub Actions triggers through a versioned event-to-schema registry; unsupported event/property combinations, malformed dispatch/call inputs, invalid activities, and conflicting filters now invalidate the whole workflow before execution evidence.
 - Validate every admitted nested GitHub Actions mapping or sequence through a versioned schema coverage map before command parsing; malformed or unrepresented trigger, strategy, defaults, concurrency, environment, snapshot, container, service, and dynamic-map structures now invalidate the whole workflow for execution evidence.
 - Validate versioned workflow-root, normal-job, reusable-job, and step property sets before command parsing; unsupported properties, incompatible execution forms, and YAML merge keys now invalidate the whole workflow for execution evidence.
 - Load GitHub Actions workflows with an isolated YAML 1.2 boolean resolver so YAML 1.1 words such as `yes`, `no`, `on`, and `off` remain text and unsupported explicit boolean tags fail closed.
