@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tools import ci_calendar_bitsets as calendar
+from tools import ci_pinned_timezone as pinned
 from tools import ci_schedule_resource_patch as resource
 from tools import ci_schedule_semantics as semantics
 from tools.ci_repository_model import build_repository_model
@@ -42,7 +43,13 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
         calendar.matching_dates.cache_clear()
         calendar.consecutive_dates.cache_clear()
         calendar._cached_parse.cache_clear()
+        pinned.pinned_identifier_state.cache_clear()
+        pinned.pinned_fixed_offset_state.cache_clear()
         resource._STATE.set(None)
+
+    def tearDown(self) -> None:
+        pinned.pinned_identifier_state.cache_clear()
+        pinned.pinned_fixed_offset_state.cache_clear()
 
     def model(self, entries: list[tuple[str, str | None]]) -> dict[str, object]:
         temporary = tempfile.TemporaryDirectory()
@@ -106,7 +113,74 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
             "WORKFLOW_SCHEDULE_TIMEZONE_SET_UNSUPPORTED",
         )
 
-    def test_aggregate_charging_is_independent_of_cache_warmth(self):
+    def test_spring_forward_timezone_set_fails_closed_before_local_mask_comparison(self):
+        self.assert_invalid(
+            [
+                ("30 2 * * *", "America/New_York"),
+                ("4 3 * * *", "America/New_York"),
+            ],
+            "WORKFLOW_SCHEDULE_TIMEZONE_TRANSITIONS_UNSUPPORTED",
+        )
+
+    def test_fall_back_repeated_hour_is_explicitly_unsupported_for_multi_entry_sets(self):
+        self.assert_invalid(
+            [
+                ("30 1 * * *", "America/New_York"),
+                ("30 2 * * *", "America/New_York"),
+            ],
+            "WORKFLOW_SCHEDULE_TIMEZONE_TRANSITIONS_UNSUPPORTED",
+        )
+
+    def test_single_entry_transition_timezone_remains_supported(self):
+        model = self.model([("30 2 * * *", "America/New_York")])
+        self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
+        self.assertEqual(
+            capability(model, "tests_run_on_pull_requests")["state"],
+            "operational",
+        )
+
+    def test_positive_fixed_offset_multi_entry_control(self):
+        model = self.model([
+            ("0 * * * *", "Etc/GMT+5"),
+            ("5 * * * *", "Etc/GMT+5"),
+        ])
+        self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
+        self.assertEqual(
+            capability(model, "tests_run_on_pull_requests")["state"],
+            "operational",
+        )
+
+    def test_transition_identity_mismatch_fails_closed(self):
+        identifiers, error = pinned.pinned_identifier_state()
+        self.assertIsNone(error)
+        self.assertIn("UTC", identifiers)
+        with patch.dict(
+            pinned.PINNED_FIXED_OFFSET_TZIF_SHA256,
+            {"UTC": "0" * 64},
+            clear=False,
+        ):
+            pinned.pinned_fixed_offset_state.cache_clear()
+            self.assert_invalid(
+                [("0 * * * *", "UTC"), ("5 * * * *", "UTC")],
+                "WORKFLOW_SCHEDULE_TIMEZONE_TRANSITION_UNVERIFIABLE",
+            )
+
+    def test_transition_data_unavailable_fails_closed(self):
+        identifiers, error = pinned.pinned_identifier_state()
+        self.assertIsNone(error)
+        self.assertIn("UTC", identifiers)
+        pinned.pinned_fixed_offset_state.cache_clear()
+        with patch.object(
+            pinned,
+            "_safe_file",
+            side_effect=OSError("transition file unavailable"),
+        ):
+            self.assert_invalid(
+                [("0 * * * *", "UTC"), ("5 * * * *", "UTC")],
+                "WORKFLOW_SCHEDULE_TIMEZONE_TRANSITION_UNVERIFIABLE",
+            )
+
+    def test_transition_charging_is_independent_of_cache_warmth(self):
         schedules = [
             resource._canonical_schedule(semantics.parse_cron_expression("0 * * * *"), "UTC"),
             resource._canonical_schedule(semantics.parse_cron_expression("5 * * * *"), "UTC"),
@@ -120,31 +194,39 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
             )
             observed.append((workflow_ledger.used, repository_ledger.used))
         self.assertEqual(observed[0], observed[1])
+        self.assertGreaterEqual(observed[0][0], resource.TRANSITION_PROOF_WORK_UNITS)
 
-    def test_aggregate_workflow_budget_exhaustion_fails_closed(self):
-        with patch.object(resource, "WORKFLOW_LIMIT", 40):
+    def test_transition_proof_workflow_budget_exhaustion_fails_closed(self):
+        with patch.object(resource, "WORKFLOW_LIMIT", 80):
             self.assert_invalid(
-                [("0 * * * *", "UTC")],
+                [("0 * * * *", "UTC"), ("5 * * * *", "UTC")],
                 "WORKFLOW_SCHEDULE_SEMANTIC_WORK_LIMIT_EXCEEDED",
             )
 
-    def test_aggregate_repository_budget_spans_workflow_files(self):
+    def test_transition_proof_repository_budget_spans_workflow_files(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             write_files(
                 root,
                 {
                     "tests/test_x.py": "import unittest\n",
-                    ".github/workflows/a.yml": workflow([("0 * 1 JAN *", "UTC")]),
-                    ".github/workflows/b.yml": workflow([("0 * 2 FEB *", "UTC")]),
+                    ".github/workflows/a.yml": workflow([
+                        ("0 * 1 JAN *", "UTC"),
+                        ("5 * 1 JAN *", "UTC"),
+                    ]),
+                    ".github/workflows/b.yml": workflow([
+                        ("0 * 2 FEB *", "Etc/GMT+5"),
+                        ("5 * 2 FEB *", "Etc/GMT+5"),
+                    ]),
                 },
             )
-            with patch.object(resource, "REPOSITORY_LIMIT", 100):
+            with patch.object(resource, "REPOSITORY_LIMIT", 170):
                 model = build_repository_model(root)
         workflows = {item["path"]: item for item in model["workflows"]}
         self.assertEqual(workflows[".github/workflows/a.yml"]["parse_status"], "parsed")
         rejected = workflows[".github/workflows/b.yml"]
         self.assertEqual(rejected["parse_status"], "invalid_shape")
+        self.assertEqual(rejected["triggers"], [])
         self.assertEqual(rejected["jobs"], [])
         self.assertEqual(rejected["commands"], [])
         self.assertEqual(rejected["command_evidence"], [])
