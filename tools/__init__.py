@@ -20,3 +20,10 @@ from tools.ci_workflow_schedule_patch import install_workflow_schedule_validatio
 
 _install_workflow_schedule_validation()
 del _install_workflow_schedule_validation
+
+# Pin timezone identity and enforce cumulative schedule work budgets last so the
+# resource gate wraps all earlier structural and semantic boundaries.
+from tools.ci_schedule_resource_patch import install_schedule_resource_hardening as _install_schedule_resource_hardening
+
+_install_schedule_resource_hardening()
+del _install_schedule_resource_hardening
