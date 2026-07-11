@@ -16,11 +16,15 @@ from tools.ci_calendar_bitsets import (
     predicate_key,
     predicate_work_units,
 )
-from tools.ci_pinned_timezone import validate_pinned_timezone
+from tools.ci_pinned_timezone import (
+    validate_fixed_offset_timezone,
+    validate_pinned_timezone,
+)
 
-CONTRACT_VERSION = "1.1.0"
+CONTRACT_VERSION = "1.2.0"
 WORKFLOW_LIMIT = 4096
 REPOSITORY_LIMIT = 8192
+TRANSITION_PROOF_WORK_UNITS = 64
 _BASE_PARSE: Callable[..., object] | None = None
 _BASE_BUILD_REPOSITORY_MODEL: Callable[..., dict[str, object]] | None = None
 _CURRENT_ROOT: ContextVar[str | None] = ContextVar("schedule_current_root", default=None)
@@ -111,6 +115,20 @@ def _charge_comparison(workflow: _Ledger, repository: _Ledger, reason: str) -> N
         ledger.charge(1, reason)
 
 
+def _require_fixed_offset_aggregate_timezone(
+    timezone: str,
+    workflow: _Ledger,
+    repository: _Ledger,
+) -> None:
+    for ledger in (workflow, repository):
+        ledger.charge(
+            TRANSITION_PROOF_WORK_UNITS,
+            "loading and verifying pinned timezone transition data",
+            ("fixed-offset-transition-proof", timezone),
+        )
+    validate_fixed_offset_timezone(timezone)
+
+
 def _aggregate_interval(schedules: list[_CanonicalSchedule], workflow: _Ledger, repository: _Ledger) -> int | None:
     """Return the minimum sub-five-minute gap over the union of all schedules."""
     if not schedules:
@@ -122,6 +140,13 @@ def _aggregate_interval(schedules: list[_CanonicalSchedule], workflow: _Ledger, 
             "Multiple schedule timezones cannot be compared on one deterministic timeline; "
             f"observed {timezones!r}.",
         )
+
+    # A single entry remains valid in any pinned IANA timezone because no aggregate
+    # comparison is required. Every multi-entry set, including semantic duplicates,
+    # must prove that its exact pinned TZif bytes are transition-free before local
+    # minute masks can safely represent an absolute timeline.
+    if len(schedules) > 1:
+        _require_fixed_offset_aggregate_timezone(timezones[0], workflow, repository)
 
     unique = sorted(
         set(schedules),
