@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Validate every admitted nested GitHub Actions mapping or sequence through a versioned schema coverage map before command parsing; malformed or unrepresented trigger, strategy, defaults, concurrency, environment, snapshot, container, service, and dynamic-map structures now invalidate the whole workflow for execution evidence.
 - Validate versioned workflow-root, normal-job, reusable-job, and step property sets before command parsing; unsupported properties, incompatible execution forms, and YAML merge keys now invalidate the whole workflow for execution evidence.
 - Load GitHub Actions workflows with an isolated YAML 1.2 boolean resolver so YAML 1.1 words such as `yes`, `no`, `on`, and `off` remain text and unsupported explicit boolean tags fail closed.
 - Gate workflow command evidence through a versioned execution-eligibility model: literal-false jobs/steps are inert, dynamic conditions remain unresolved, and steps mixing `run` with `uses` cannot establish operational capability.
