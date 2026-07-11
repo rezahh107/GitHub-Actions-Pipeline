@@ -51,7 +51,8 @@ def _union(values: tuple[int, ...], masks: tuple[int, ...]) -> int:
 
 
 @lru_cache(maxsize=4096)
-def consecutive_dates(key: tuple[object, ...]) -> bool:
+def matching_dates(key: tuple[object, ...]) -> int:
+    """Return the complete 400-year date mask for one canonical cron predicate."""
     dom, dom_any, months, weekdays, weekday_any = key
     all_dates, month_masks, dom_masks, weekday_masks = calendar_masks()
     month_mask = _union(months, month_masks)
@@ -65,10 +66,24 @@ def consecutive_dates(key: tuple[object, ...]) -> bool:
         day_mask = dom_mask
     else:
         day_mask = dom_mask | weekday_mask
-    matched = month_mask & day_mask
-    return bool(matched & (matched >> 1)) or bool(
-        (matched & 1) and (matched & (1 << (_CYCLE_DAYS - 1)))
+    return month_mask & day_mask
+
+
+def adjacent_date_masks(left: int, right: int) -> bool:
+    """Return whether a left-date occurrence is followed by a right-date occurrence.
+
+    The comparison is cyclic so the final day of the 400-year Gregorian cycle is
+    adjacent to its first day.
+    """
+    return bool(left & (right >> 1)) or bool(
+        (left & (1 << (_CYCLE_DAYS - 1))) and (right & 1)
     )
+
+
+@lru_cache(maxsize=4096)
+def consecutive_dates(key: tuple[object, ...]) -> bool:
+    matched = matching_dates(key)
+    return adjacent_date_masks(matched, matched)
 
 
 @lru_cache(maxsize=2048)
