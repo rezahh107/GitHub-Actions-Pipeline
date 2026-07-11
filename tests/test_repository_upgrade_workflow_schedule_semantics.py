@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import tools.ci_schedule_semantics as schedule_semantics
+from tools import ci_pinned_timezone as pinned_timezone
 from tools.ci_repository_model import build_repository_model
 
 
@@ -122,16 +123,18 @@ class ScheduleSemanticEvidenceBoundaryTests(unittest.TestCase):
             "operational",
         )
 
-    def test_timezone_database_unavailability_fails_closed(self):
-        schedule_semantics._timezone_database_available.cache_clear()
-        with patch.object(schedule_semantics, "_ZoneInfo", None):
+    def test_timezone_data_source_unavailability_fails_closed(self):
+        with patch.object(
+            pinned_timezone,
+            "pinned_identifier_state",
+            return_value=(None, "Pinned timezone data unavailable."),
+        ):
             with self.assertRaises(schedule_semantics.ScheduleSemanticError) as caught:
-                schedule_semantics.validate_timezone_name("Etc/UTC")
+                pinned_timezone.validate_pinned_timezone("Etc/UTC")
         self.assertEqual(
             caught.exception.code,
             "WORKFLOW_SCHEDULE_TIMEZONE_UNVERIFIABLE",
         )
-        schedule_semantics._timezone_database_available.cache_clear()
 
 
 if __name__ == "__main__":
