@@ -20,6 +20,7 @@ CONTRACT_VERSION = "1.0.0"
 WORKFLOW_LIMIT = 4096
 REPOSITORY_LIMIT = 8192
 _BASE_PARSE: Callable[..., object] | None = None
+_BASE_BUILD_REPOSITORY_MODEL: Callable[..., dict[str, object]] | None = None
 _CURRENT_ROOT: ContextVar[str | None] = ContextVar("schedule_current_root", default=None)
 
 
@@ -132,14 +133,36 @@ def _parse_with_root(root: Path, path: Path):
         _CURRENT_ROOT.reset(token)
 
 
+def _build_with_fresh_repository_budget(root: Path) -> dict[str, object]:
+    token = _STATE.set(None)
+    try:
+        return _BASE_BUILD_REPOSITORY_MODEL(root)
+    finally:
+        _STATE.reset(token)
+
+
+def _install_repository_budget_scope() -> None:
+    global _BASE_BUILD_REPOSITORY_MODEL
+    from tools import ci_repository_model as _model
+
+    if (
+        getattr(_model.build_repository_model, "__schedule_resource_contract__", None)
+        == CONTRACT_VERSION
+    ):
+        return
+    _BASE_BUILD_REPOSITORY_MODEL = _model.build_repository_model
+    _build_with_fresh_repository_budget.__schedule_resource_contract__ = CONTRACT_VERSION
+    _model.build_repository_model = _build_with_fresh_repository_budget
+
+
 def install_schedule_resource_hardening() -> None:
     global _BASE_PARSE
     install_calendar_bitsets()
     _semantics.validate_timezone_name = validate_pinned_timezone
     _schedule.validate_timezone_name = validate_pinned_timezone
     _schedule._schedule_errors = _schedule_errors
-    if getattr(_structure.parse_workflow, "__schedule_resource_contract__", None) == CONTRACT_VERSION:
-        return
-    _BASE_PARSE = _structure.parse_workflow
-    _parse_with_root.__schedule_resource_contract__ = CONTRACT_VERSION
-    _structure.parse_workflow = _parse_with_root
+    if getattr(_structure.parse_workflow, "__schedule_resource_contract__", None) != CONTRACT_VERSION:
+        _BASE_PARSE = _structure.parse_workflow
+        _parse_with_root.__schedule_resource_contract__ = CONTRACT_VERSION
+        _structure.parse_workflow = _parse_with_root
+    _install_repository_budget_scope()
