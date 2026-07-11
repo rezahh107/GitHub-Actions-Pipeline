@@ -36,14 +36,14 @@ class RepositoryScheduleBudgetLifecycleTests(unittest.TestCase):
             tests.write_text("import unittest\n", encoding="utf-8")
 
             first = root / ".github" / "workflows" / "a.yml"
-            write_workflow(first, range(1, 6))
+            write_workflow(first, range(1, 10, 2))
             with patch.object(resource, "REPOSITORY_LIMIT", 300):
                 first_model = build_repository_model(root)
                 self.assertEqual(first_model["workflows"][0]["parse_status"], "parsed")
 
                 first.unlink()
                 second = root / ".github" / "workflows" / "z.yml"
-                write_workflow(second, range(1, 6))
+                write_workflow(second, range(1, 10, 2))
                 second_model = build_repository_model(root)
 
         self.assertEqual(second_model["workflows"][0]["parse_status"], "parsed")
