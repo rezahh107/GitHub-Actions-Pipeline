@@ -154,8 +154,8 @@ class CumulativeScheduleBudgetTests(unittest.TestCase):
     def test_repository_budget_spans_multiple_workflow_files(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            first = [(f"0,59 0,23 {day} 1 *", None) for day in range(1, 6)]
-            second = [(f"0,59 0,23 {day} 2 *", None) for day in range(6, 11)]
+            first = [(f"0,59 0,23 {day} 1 *", None) for day in range(1, 10, 2)]
+            second = [(f"0,59 0,23 {day} 2 *", None) for day in range(11, 20, 2)]
             write_files(root, {
                 "tests/test_x.py": "import unittest\n",
                 ".github/workflows/a.yml": workflow(first),
