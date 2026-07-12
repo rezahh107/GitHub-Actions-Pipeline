@@ -27,3 +27,10 @@ from tools.ci_schedule_resource_patch import install_schedule_resource_hardening
 
 _install_schedule_resource_hardening()
 del _install_schedule_resource_hardening
+
+# Compare duplicate schedule entries by their complete 400-year occurrence
+# semantics before fixed-offset proof or aggregate projection is attempted.
+from tools.ci_schedule_occurrence_identity_patch import install_schedule_occurrence_identity_hardening as _install_schedule_occurrence_identity_hardening
+
+_install_schedule_occurrence_identity_hardening()
+del _install_schedule_occurrence_identity_hardening
