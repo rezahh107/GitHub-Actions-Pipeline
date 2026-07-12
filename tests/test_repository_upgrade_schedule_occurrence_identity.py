@@ -98,7 +98,7 @@ class CompleteOccurrenceIdentityTests(unittest.TestCase):
         self.assert_invalid(
             [
                 ("0,5 * * * *", "America/New_York"),
-                ("0,5 1-31 * *", "America/New_York"),
+                ("0,5 * 1-31 * *", "America/New_York"),
             ],
             "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
         )
@@ -149,8 +149,8 @@ class CompleteOccurrenceIdentityTests(unittest.TestCase):
             for day in range(1, 5)
         ]
         for scope, workflow_limit, repository_limit in (
-            ("workflow", 32, 4096),
-            ("repository", 4096, 32),
+            ("workflow", 3, 4096),
+            ("repository", 4096, 3),
         ):
             observed: list[tuple[int, int, str]] = []
             for _ in range(2):
