@@ -96,16 +96,79 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
         self.assertTrue(calendar.adjacent_date_masks(last_day, first_day))
         self.assertFalse(calendar.adjacent_date_masks(first_day, last_day))
 
-    def test_duplicate_entries_are_semantically_deduplicated(self):
-        model = self.model([
-            ("0 * * * *", "UTC"),
-            ("0 * * * *", "UTC"),
-        ])
-        self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
-        self.assertEqual(
-            capability(model, "tests_run_on_pull_requests")["state"],
-            "operational",
+    def test_identical_cron_and_timezone_duplicate_fails_closed(self):
+        self.assert_invalid(
+            [("0 * * * *", "UTC"), ("0 * * * *", "UTC")],
+            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
         )
+
+    def test_omitted_timezone_and_explicit_utc_duplicate_fails_closed(self):
+        self.assert_invalid(
+            [("0 0 * * *", None), ("0 0 * * *", "UTC")],
+            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+        )
+
+    def test_syntactically_distinct_semantic_duplicate_fails_closed(self):
+        self.assert_invalid(
+            [("0 0 * * SUN", "UTC"), ("0 0 * * 0", "UTC")],
+            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+        )
+
+    def test_duplicate_active_date_predicates_fail_closed(self):
+        self.assert_invalid(
+            [("0 0 1 JAN MON", "UTC"), ("0 0 1 1 1", "UTC")],
+            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+        )
+
+    def test_large_duplicate_set_fails_closed_deterministically(self):
+        self.assert_invalid(
+            [("0 0 * * *", "UTC")] * 256,
+            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+        )
+
+    def test_duplicate_scan_workflow_and_repository_budget_are_deterministic(self):
+        schedules: list[resource._CanonicalSchedule] = []
+        for month in range(1, 4):
+            for day in range(1, 32):
+                schedules.append(
+                    resource._canonical_schedule(
+                        semantics.parse_cron_expression(f"0 0 {day} {month} *"),
+                        "UTC",
+                    )
+                )
+                if len(schedules) == 70:
+                    break
+            if len(schedules) == 70:
+                break
+        schedules.append(schedules[-1])
+
+        for scope, workflow_limit, repository_limit in (
+            ("workflow", 64, 4096),
+            ("repository", 4096, 64),
+        ):
+            observed: list[tuple[int, int, str]] = []
+            for _ in range(2):
+                workflow_ledger = resource._Ledger("workflow", workflow_limit)
+                repository_ledger = resource._Ledger("repository", repository_limit)
+                with self.assertRaises(semantics.ScheduleSemanticError) as caught:
+                    resource._aggregate_interval(
+                        schedules,
+                        workflow_ledger,
+                        repository_ledger,
+                    )
+                self.assertEqual(
+                    caught.exception.code,
+                    "WORKFLOW_SCHEDULE_SEMANTIC_WORK_LIMIT_EXCEEDED",
+                )
+                observed.append(
+                    (
+                        workflow_ledger.used,
+                        repository_ledger.used,
+                        caught.exception.message,
+                    )
+                )
+            self.assertEqual(observed[0], observed[1])
+            self.assertIn(scope, observed[0][2])
 
     def test_multiple_timezones_fail_closed_until_normalization_is_represented(self):
         self.assert_invalid(
@@ -236,6 +299,17 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
         self.assertIn(
             "WORKFLOW_SCHEDULE_SEMANTIC_WORK_LIMIT_EXCEEDED",
             {item["code"] for item in model["unresolved_evidence"]},
+        )
+
+    def test_distinct_utc_events_exactly_five_minutes_apart_remain_operational(self):
+        model = self.model([
+            ("0 * * * *", "UTC"),
+            ("5 * * * *", "UTC"),
+        ])
+        self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
+        self.assertEqual(
+            capability(model, "tests_run_on_pull_requests")["state"],
+            "operational",
         )
 
     def test_valid_multi_entry_union_at_five_minutes_remains_operational(self):
