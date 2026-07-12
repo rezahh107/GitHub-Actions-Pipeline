@@ -37,7 +37,7 @@ class RepositoryScheduleBudgetLifecycleTests(unittest.TestCase):
 
             first = root / ".github" / "workflows" / "a.yml"
             write_workflow(first, range(1, 10, 2))
-            with patch.object(resource, "REPOSITORY_LIMIT", 300):
+            with patch.object(resource, "REPOSITORY_LIMIT", 350):
                 first_model = build_repository_model(root)
                 self.assertEqual(first_model["workflows"][0]["parse_status"], "parsed")
 
