@@ -6,7 +6,7 @@ from tools import ci_schedule_semantics as _semantics
 from tools.ci_calendar_bitsets import matching_dates
 
 CONTRACT_VERSION = "1.5.0"
-OCCURRENCE_IDENTITY_WORK_UNITS = 16
+OCCURRENCE_IDENTITY_WORK_UNITS = 1
 
 
 def _complete_occurrence_identity(
