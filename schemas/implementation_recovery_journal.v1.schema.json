@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Implementation Recovery Journal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["journal_contract_version", "transaction_id", "status", "plan", "events"],
+  "properties": {
+    "journal_contract_version": {"const": "1.0.0"},
+    "transaction_id": {"$ref": "#/definitions/sha256"},
+    "status": {"enum": ["planned", "mutating", "mutated", "persisting", "committed", "failed", "rolled_back", "recovery_required"]},
+    "plan": {"$ref": "#/definitions/plan"},
+    "events": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/event"}}
+  },
+  "definitions": {
+    "sha1": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "path": {"type": "string", "minLength": 1},
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_id", "path", "content_sha256"],
+      "properties": {
+        "action_id": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1, "not": {"pattern": "(^/|(^|/)\\.\\.(/|$))"}},
+        "content_sha256": {"$ref": "#/definitions/sha256"}
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report", "package", "result"],
+      "properties": {
+        "report": {"$ref": "#/definitions/path"},
+        "package": {"$ref": "#/definitions/path"},
+        "result": {"$ref": "#/definitions/path"}
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_head_sha", "repository_root", "package_sha256", "allowed_recipe_ids", "actions", "outputs"],
+      "properties": {
+        "expected_head_sha": {"$ref": "#/definitions/sha1"},
+        "repository_root": {"$ref": "#/definitions/path"},
+        "package_sha256": {"$ref": "#/definitions/sha256"},
+        "allowed_recipe_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "actions": {"type": "array", "items": {"$ref": "#/definitions/action"}},
+        "outputs": {"$ref": "#/definitions/outputs"}
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sequence", "event"],
+      "properties": {
+        "sequence": {"type": "integer", "minimum": 0},
+        "event": {"enum": ["planned", "mutating", "mutated", "persisting", "committed", "failed", "rolled_back", "recovery_required"]},
+        "applied_count": {"type": "integer", "minimum": 0},
+        "output_label": {"enum": ["report", "package", "result"]},
+        "path": {"$ref": "#/definitions/path"},
+        "sha256": {"$ref": "#/definitions/sha256"},
+        "output_digests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["report", "package", "result"],
+          "properties": {
+            "report": {"$ref": "#/definitions/sha256"},
+            "package": {"$ref": "#/definitions/sha256"},
+            "result": {"$ref": "#/definitions/sha256"}
+          }
+        },
+        "error_code": {"type": "string", "minLength": 1},
+        "message": {"type": "string", "minLength": 1},
+        "rollback_errors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "rolled_back_outputs": {"type": "array", "uniqueItems": true, "items": {"enum": ["report", "package", "result"]}}
+      }
+    }
+  }
+}

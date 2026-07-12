@@ -1,253 +1,95 @@
-# GitHub Actions Pipeline
+# GitHub Actions Pipeline — Project Reference
 
-A personal, AI-assisted decision pipeline for designing meaningful GitHub Actions CI for real repositories.
+Current repository version: `0.3.0`
 
-This repository is **not** a generic workflow catalog. It is an evidence-first operating system for a GitHub-connected model: inspect a target repository, identify real failure modes, select a small set of high-signal gates, ask only for permission to modify a branch, implement the smallest useful patch, and report validation evidence honestly.
+## Purpose
 
-Current version: `0.1.1`.
+This repository defines a deterministic, evidence-first system for analyzing target repositories, identifying operational capability gaps, ranking high-leverage improvements, and staging safe implementation. GitHub Actions is one enforcement surface within the wider repository-engineering workflow.
 
-## Core Question
+## Product modes
 
-> What can actually break in this repository, and which small machine-checkable GitHub Actions gates should catch those failures with the least friction?
+- `minimal-safe-ci`: conservative default for a small number of strongly justified controls.
+- `deep-repository-upgrade`: opt-in repository model, semantic resolution, history, optional telemetry, profile composition, ranking, staged plan, and dry-run implementation package.
 
-## Priorities
-
-1. Correctness
-2. Determinism
-3. Low-friction automation
-4. Fast actionable feedback
-5. Small number of meaningful gates
-6. Maximum useful autonomy from the language model
-
-The pipeline is optimized for personal and solo-maintainer repositories. Enterprise security tooling is not a default priority; minimum permissions and low-cost safety guardrails remain required.
+## Canonical architecture
 
 ```text
-Evidence first → failure modes → meaningful gates → owner permission → branch patch → validation evidence
+repository evidence
+  → RepositoryModel 1.1
+  → profile detection/composition
+  → history + optional telemetry
+  → observed / structural / baseline recommendations
+  → ranking-policy.v1
+  → minimal plan or staged deep upgrade
+  → explicit recipe-bound implementation when separately authorized
 ```
-
-## Owner Model
-
-The owner grants permission to make repository changes. The model makes the technical CI/CD decisions.
-
-Before approval, analysis is read-only. After approval, implementation happens on a dedicated branch and should remain small, reversible, and repository-specific.
-
-## Connector-First Architecture
-
-```text
-GitHub-connected model
-        ↓
-Repository and history inspection
-        ↓
-GitHub Actions runner executes deterministic tools
-        ↓
-JSON artifact + step summary + workflow evidence
-        ↓
-Model selects or rejects CI gates
-        ↓
-Owner approves branch modification
-        ↓
-Patch, PR, and exact-SHA validation
-```
-
-The model must not assume a local shell exists. Deterministic evidence should run in GitHub Actions or another explicitly available execution environment.
-
-## Repository Structure
-
-```text
-README.md
-AGENTS.md
-CHANGELOG.md
-VERSION
-.gitattributes
-
-pipeline/
-  00-overview.md
-  01-target-intake.md
-  02-static-inventory.md
-  03-evidence-mining.md
-  04-failure-mode-discovery.md
-  05-ci-gate-map.md
-  06-implementation-protocol.md
-  07-validation-and-reporting.md
-  08-scope-claim-audit.md
-
-prompts/
-  00-start.md
-  01-audit-only.md
-  02-implementation-after-approval.md
-  03-post-implementation-validation.md
-  04-scope-claim-audit.md
-
-risk-patterns/
-  README.md
-  python-package.yaml
-  python-desktop.yaml
-  browser-extension-mv3.yaml
-  wordpress-plugin.yaml
-  contract-schema-repo.yaml
-  docs-only-repo.yaml
-  multi-repo-adapter.yaml
-
-schemas/
-  ci_detective_report.schema.json
-  ci_gate_map.schema.json
-  risk_pattern.schema.json
-  scope_claim_audit.schema.json
-
-examples/
-  ci_detective_report.example.json
-  ci_gate_map.example.json
-  scope_claim_audit.example.json
-  scope_claim_audit.true-negative.example.json
-  scope_claim_audit.ambiguous.example.json
-
-tools/
-  ci_detective.py
-  ci_git_evidence.py
-  ci_models.py
-  ci_report.py
-  scope_claim_audit.py
-
-tests/
-  test_ci_detective.py
-  test_examples.py
-  test_schemas.py
-  test_scope_claim_audit_examples.py
-  test_scope_claim_audit_schema.py
-  test_scope_claim_audit_tool.py
-  test_workflow_action_pinning.py
-  test_workflow_contract.py
-
-.github/workflows/
-  validate.yml
-```
-
-JSON is the canonical fixture format. A second hand-maintained YAML copy is intentionally not kept because duplicate fixtures can drift. The domain risk-pattern library uses YAML because it is a hand-maintained domain catalog, not a duplicate fixture set.
-
-## Scope Claim Audit
-
-Scope Claim Audit checks whether a PR claim under-reports actual changed scope, especially when the diff touches sensitive repository surfaces such as schemas, validators, workflows, release locks, package metadata, generated outputs, or protocol files.
-
-It is advisory by default and feeds CI gate design decisions; it is not a generic merge stopper. Future enforced mode is valid only when a target repository has a real wired gate and the audit package declares `enforcement_mode: enforced` plus `wired_enforcement_gate` metadata.
 
 ## Pipeline Phases
 
-1. Load this repository and its operating rules.
-2. Intake the target repository and connector scope.
-3. Build a factual static inventory, including domain risk-pattern detection signals.
-4. Mine bounded English and Persian commit evidence.
-5. Inspect workflow telemetry and cross-repository evidence when accessible.
-6. Classify failure modes, adding matched domain risk patterns as candidate risks.
-7. Apply the Gate Meaningfulness Test.
-8. Produce a schema-valid CI Gate Map.
-9. Give a short Persian owner briefing.
-10. Ask only for permission to modify a branch.
-11. Implement the approved gates.
-12. Validate the exact tested SHA and report results.
+1. Validate the explicit operating mode and repository root.
+2. Collect bounded file, manifest, workspace, workflow, and command evidence.
+3. Resolve supported Python AST and package-script semantics without guessing dynamic behavior.
+4. Build components, relationships, critical paths, and capability states with evidence.
+5. Detect and compose profiles while preserving conflicts.
+6. Collect bounded structural history and optional read-only telemetry.
+7. Generate independent observed-failure, structural-invariant, and baseline-capability recommendations.
+8. Rank recommendations with the versioned ordinal policy and factor-level rationale.
+9. Produce a minimal plan or staged deep upgrade plus a dry-run implementation package.
+10. Apply only explicitly allowlisted recipes under exact-HEAD and clean-worktree guards.
+11. Validate on the exact resulting SHA and record outcomes separately for review-only profile evolution.
 
-## Gate Meaningfulness Test
+## Current deterministic capabilities
 
-A gate is allowed only if it catches a real, plausible, repository-specific failure with acceptable runtime and noise.
+- JSON, TOML, and YAML configuration parsing;
+- manifest, lockfile, workspace, workflow, component, test, schema, validator, release, and capability modeling;
+- Python AST import, route, `__main__`, and `module:function` entry-point resolution;
+- package-script and workflow-command resolution;
+- bounded structural Git-history analysis;
+- optional read-only GitHub Actions run telemetry;
+- cold-start handling;
+- 16 composable profiles with matched-signal evidence and conflict diagnostics;
+- capability-specific ordinal ranking with factor rationale;
+- dry-run implementation packages;
+- exact-HEAD, clean-worktree, allowlisted atomic create-file application;
+- review-only profile-evolution proposals from exact-head validated outcomes.
 
-Before adding one, answer:
+## Safety boundaries
 
-1. What exact failure does it catch?
-2. What repository evidence supports it?
-3. Is there an existing validator or test to wire into CI?
-4. Will a failure immediately tell the maintainer what to fix?
-5. Which event should trigger it?
-6. Is its runtime proportional to its signal?
-7. Is it noisy or flaky?
-8. Does it enforce something rather than merely document it?
+- no direct writes to `main`;
+- no PR merge or auto-merge;
+- no release or package publication;
+- no secret mutation;
+- no execution of untrusted repository commands by the implementation engine;
+- no automatic registry learning;
+- no semantic claim beyond supported parsers or declarations.
 
-A gate must be classified as:
+## Contract map
 
-- `proposed_gates`: supported and ready for owner approval;
-- `rejected_gates`: not meaningful for current evidence;
-- `deferred_gates`: potentially useful but blocked on named missing evidence.
+| Contract | Version | Path |
+|---|---:|---|
+| Legacy CI detective | `0.1.1` | `schemas/ci_detective_report.schema.json` |
+| Legacy repository upgrade report | `1.0.0` | `schemas/repository_upgrade_report.v1.schema.json` |
+| Current repository upgrade report | `1.1.0` | `schemas/repository_upgrade_report.v1.1.schema.json` |
+| Capability profiles | `1.0.0` | `profiles/capability-profiles.v1.json` |
+| Ranking policy | `1.0.0` | `profiles/ranking-policy.v1.json` |
+| Implementation recipes | `1.0.0` | `profiles/implementation-recipes.v1.json` |
+| Repository outcomes | `1.0.0` | `schemas/repository_outcomes.v1.schema.json` |
+| Profile evolution proposals | `1.0.0` | `schemas/profile_evolution.v1.schema.json` |
 
-Each proposed gate contains explicit evidence, execution events, permissions, command, affected files, and structured risk assessment. Numeric risk scoring is intentionally deferred until a versioned formula exists.
-
-## Evidence Contract
-
-`tools/ci_detective.py` writes a strict JSON report validated by `schemas/ci_detective_report.schema.json`.
-
-The contract requires:
-
-- shallow clones are never reported as complete history;
-- completeness states include a reason;
-- `tested_sha`, `source_head_sha`, and `base_sha` remain separate;
-- synthetic PR merge refs are identified as `pull_request_merge`;
-- evidence items use closed schemas;
-- hotspots use deterministic path tie-breakers;
-- JSON keys are stable and NaN or infinities are rejected;
-- `evidence_sha256` is SHA-256 over canonical evidence content, excluding generation time and run context;
-- a fixed `--generated-at` value or `SOURCE_DATE_EPOCH` makes the full artifact reproducible.
-
-The local collector does not call GitHub APIs. Workflow telemetry is therefore `unavailable`, and sibling-repository scope is `unknown`, until connector evidence is supplied.
-
-## Evidence Persistence
+## Main entry points
 
 ```text
-raw JSON evidence      → workflow artifact
-human-readable summary → GITHUB_STEP_SUMMARY
-final decision summary → PR body or PR comment
+START.md
+protocol/start.yaml
+tools/ci_detective.py
+tools/repository_upgrade.py
+tools/profile_evolution.py
 ```
 
-Generated reports are not committed by default. The validation workflow retains artifacts for 14 days.
+## Validation
 
-## Validation Workflow
+The canonical validation workflow runs the complete unit suite, legacy report generation, both current operating modes, Scope Claim Audit checks, and artifact uploads. Exact-head evidence belongs in the active pull request rather than this file to avoid self-staling SHA claims.
 
-`.github/workflows/validate.yml` runs on pull requests, pushes to `main`, and manual dispatch.
+## Continuation contract
 
-It uses:
-
-- read-only repository permission;
-- full Git history for evidence mining;
-- checkout without persisted credentials;
-- a fixed Ubuntu runner image;
-- a ten-minute timeout;
-- full-SHA action pinning;
-- exact tested and source head SHA reporting.
-
-Markdown, pipeline protocol files, and prompts are intentionally **not** excluded because they are part of the product contract.
-
-## Local Validation
-
-The runtime collector uses only the Python standard library. Tests use `jsonschema` and `pyyaml`.
-
-```bash
-python -m pip install -r requirements-test.txt
-python -m unittest discover -s tests
-python tools/ci_detective.py \
-  --repo-root . \
-  --out /tmp/ci_detective_report.json \
-  --generated-at 2026-07-05T00:00:00Z
-python tools/scope_claim_audit.py --check examples/scope_claim_audit.example.json
-python tools/scope_claim_audit.py --check examples/scope_claim_audit.true-negative.example.json
-python tools/scope_claim_audit.py --check examples/scope_claim_audit.ambiguous.example.json
-python tools/scope_claim_audit.py --input examples/scope_claim_audit.example.json --out /tmp/scope_claim_audit.summary.md
-```
-
-## Intentionally Not Added by Default
-
-- CodeQL, OpenSSF Scorecard, dependency review, or broad vulnerability gates;
-- heavyweight Python matrices without compatibility evidence;
-- generic linters without a repository-specific failure mode;
-- pre-commit as a required dependency;
-- Makefile wrappers for already-short commands;
-- reusable workflows before repeated pilot evidence exists;
-- pip cache without runtime telemetry showing material benefit;
-- Markdown `paths-ignore` filters.
-
-## Success Criteria
-
-The pipeline succeeds when:
-
-- each gate traces to evidence;
-- required checks remain few and actionable;
-- missing evidence is explicit;
-- producer output, schemas, examples, tests, and documentation stay aligned;
-- no check is called enforced until it runs in GitHub Actions;
-- validation identifies the exact tested commit and the source head;
-- incomplete evidence is never silently promoted to complete evidence.
+Use `docs/DEEP_REPOSITORY_UPGRADE_STATUS.md` for requirement traceability, verified modules, limitations, deferred work, and the next safe continuation step.

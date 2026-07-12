@@ -2,356 +2,205 @@
 
 This file defines operating instructions for AI agents working in this repository.
 
-The repository owner is a non-technical owner. The agent is expected to make technical CI/CD decisions autonomously, based on repository evidence, current official documentation when needed, and the policies in this repository.
+## Mission
 
-## Repository Mission
+`GitHub-Actions-Pipeline` is an evidence-first repository intelligence and staged-improvement engine. It is not a catalog of generic checks and it is not authorized to invent repository behavior.
 
-This repository, `GitHub-Actions-Pipeline`, defines a personal AI-assisted pipeline for designing and implementing meaningful GitHub Actions CI gates in target repositories.
+Preserve:
 
-The goal is not to create generic workflows.
-The goal is to help an AI agent inspect a target repository, detect real failure modes, decide the best low-friction CI gates, and implement only the smallest useful patch after owner approval.
+- evidence/inference separation;
+- deterministic validation and serialization;
+- exact-SHA awareness;
+- proposed, rejected, deferred, blocked, and intentionally uncovered decisions;
+- least-privilege workflow design;
+- reversible branch-based changes;
+- closed schema and registry discipline;
+- explicit limitations;
+- resistance to CI theater.
 
-## Operating Mode
+## Source precedence
 
-This project is GitHub Connector-first.
+1. Versioned schemas and executable contracts.
+2. Validated fixtures and deterministic assertions.
+3. Versioned registries and architecture protocols.
+4. Current implementation.
+5. Unverified proposals or conversation notes.
 
-Assume the agent interacts with GitHub through connector/API operations unless a later task explicitly provides a local execution environment.
+Report conflicts. Do not silently merge incompatible rules.
 
-The agent may use GitHub Connector to:
+## Operating modes
 
-* inspect files;
-* create or update files;
-* create branches;
-* open or update pull requests;
-* inspect workflow runs when accessible;
-* inspect artifacts or summaries when accessible;
-* apply changes after owner approval.
+### `minimal-safe-ci`
 
-The agent must not assume it can directly run local shell commands such as `git log`, `git grep`, `python`, `pytest`, or `bash` unless a runner/tool execution environment is explicitly available.
+Default conservative mode. No baseline expansion, remote telemetry requirement, implementation package, or semantic-history expansion beyond what the policy enables.
 
-Deterministic evidence mining should run inside GitHub Actions runners or through explicitly available tools, not through model imagination.
+### `deep-repository-upgrade`
 
-## Owner Interaction Rules
+Explicit opt-in. Adds bounded semantic modeling, profile composition, structural history, optional telemetry, capability gaps, calibrated ranking, staged output, and a dry-run implementation package.
 
-The owner is not expected to make technical CI/CD decisions.
+Mode behavior must remain policy-driven rather than scattered conditionals.
 
-Do not ask the owner to choose between technical options such as:
+## Evidence and relationship rules
 
-* whether to use pytest or unittest;
-* whether to use a matrix;
-* whether to add cache;
-* whether to split workflows;
-* whether to add CodeQL, Scorecard, dependency review, or other tools;
-* which GitHub Actions syntax or architecture to use.
-
-The agent must decide technical matters itself.
-
-Only ask the owner for:
-
-1. the target repository URL, if missing;
-2. permission to modify a repository on a dedicated branch;
-3. access expansion when connector scope is insufficient;
-4. clarification of non-technical preferences when absolutely necessary;
-5. approval for destructive, irreversible, or unusually risky actions.
-
-Owner approval means permission to perform repository changes.
-It does not mean the owner is selecting technical options.
-
-The standard approval question is:
+Evidence states:
 
 ```text
-آیا اجازه می‌دهی روی branch جدا این تغییرات را پیاده‌سازی کنم؟
+observed
+derived
+inferred
+unavailable
+not_applicable
 ```
 
-## Decision Authority
-
-When multiple technically valid options exist, choose the option with the best balance of:
-
-1. correctness;
-2. determinism;
-3. low friction;
-4. maintainability;
-5. clear failure messages;
-6. small number of gates;
-7. personal solo-maintainer fit.
-
-If evidence is insufficient, gather more evidence where possible.
-If evidence remains incomplete, choose the safest reversible low-friction option and clearly label the uncertainty.
-
-If a technical challenge appears, the agent must:
-
-1. inspect repository evidence;
-2. search current official or primary documentation if needed;
-3. choose the best approach itself;
-4. document the decision briefly in Persian;
-5. continue without asking the owner to make the technical choice.
-
-## Core CI Philosophy
-
-A CI gate is allowed only if it catches a real, plausible, repository-specific failure with low noise and acceptable runtime cost.
-
-Do not add CI theater.
-
-Avoid:
-
-* generic checks without repository evidence;
-* heavy security scanners by default;
-* broad matrix builds without compatibility risk;
-* slow workflows without signal;
-* duplicated validator logic inside workflow YAML;
-* many fragile path allowlists;
-* documentation-only enforcement that is not wired into CI;
-* claims of success without evidence.
-
-Prefer:
-
-* wiring existing validators into CI;
-* small deterministic tests;
-* clear failure messages;
-* stable job names;
-* fast structural checks before slower behavioral checks;
-* simple workflow files;
-* branch-based reversible implementation.
-
-## Scope Claim Audit Rule
-
-Scope Claim Audit is part of this repository's review vocabulary, not an unrelated carryover. It checks whether a PR, handoff, implementation summary, or final Persian report accurately describes changed scope and enforcement state.
-
-A `claim` is an explicit statement about what changed, what was validated, what passed, what failed, what is enforced, or what is safe to rely on. Claims may appear in PR titles, PR bodies, commit messages, review comments, handoff text, implementation summaries, or final owner reports.
-
-Scope Claim Audit separates:
-
-* deterministic diff facts: connector or runner facts such as changed paths, file statuses, additions/deletions, sensitive surfaces, tested head SHA, workflow names, check names, artifacts, and validation results;
-* interpretive claim classification: the model's judgment about whether the claim text matches those facts.
-
-The Scope Claim Audit schema currently allows these `enforcement_mode` values:
+Relationship resolution states are separate:
 
 ```text
-advisory = review signal only; it must not block by itself and `wired_enforcement_gate` must be null
-enforced = a real workflow/check/policy gate is wired and identified through non-null `wired_enforcement_gate`
+resolved
+partial
+inferred
+unresolved
 ```
 
-Use `enforced` only when direct repository evidence identifies the wired gate, such as workflow path, check name, gate name, and enforcement evidence. Otherwise use `advisory` and do not describe the result as blocking or enforced.
+Do not call a relationship resolved unless a versioned parser or declarative reference establishes it. File/path proximity is `inferred` at most.
 
-The `enforcement_mode` and `wired_enforcement_gate` fields belong to Scope Claim Audit outputs that conform to `schemas/scope_claim_audit.schema.json`. They do not replace `evidence_level`, CI Gate Map fields, risk assessment, or the Gate Meaningfulness Test.
+Component boundaries follow explicit workspace declarations, then nearest manifest roots. A manifest boundary is not proof of semantic ownership.
 
-This rule is a specific case of the Evidence Rules below: silence is not proof, and claims about validation or enforcement must be backed by exact evidence. Scope Claim Audit may feed review attention or future CI Gate Map design, but it does not replace the CI Gate Map or the Gate Meaningfulness Test.
+## Capability rules
 
-## Evidence Rules
-
-The agent must separate:
-
-* confirmed evidence;
-* structural inference;
-* domain-pattern inference;
-* cross-repo evidence;
-* hypothetical risk;
-* rejected gates.
-
-Do not call a risk `real` without evidence.
-
-Use these evidence levels:
+Use only:
 
 ```text
-historical      = observed in commits, PRs, issues, or CI failures
-structural      = implied by repository structure and file relationships
-domain_pattern  = known risk for this project type
-cross_repo      = found through sibling repositories or shared contracts
-hypothetical    = plausible but weakly evidenced
+absent
+nominal
+partial
+operational
+operational_but_weak
+unknown
+not_applicable
 ```
 
-When evidence is unavailable, say so.
-Silence is not proof.
+A similarly named file never proves operational capability. Confirm executable configuration or a command actually connected to CI.
 
-For PR, handoff, implementation-summary, or final-report claims about changed scope, validation, blocking behavior, or enforcement, also apply the Scope Claim Audit Rule above.
+Recommendation channels remain independent:
 
-## Personal Repository Security Policy
+- `observed_failure`;
+- `structural_invariant`;
+- `baseline_capability`.
 
-The target repositories are usually personal, solo-maintainer repositories.
-External attacker hardening is not a default priority.
+No recorded failure means `not_yet_observed`, not `not_needed`. Co-change and repeated fixes are correlation, not causation.
 
-Do not add enterprise-grade security controls unless repository evidence justifies them or the owner explicitly requests them.
+## Semantic analyzer boundary
 
-Do not add by default:
+Current semantic authority is limited to:
 
-* OpenSSF Scorecard;
-* CodeQL;
-* dependency review;
-* secret scanning workflows;
-* vulnerability gates;
-* mandatory full-length SHA pinning for every action;
-* heavy scheduled scans;
-* enterprise-style policy enforcement.
+- bounded Python AST parsing;
+- local Python import resolution;
+- literal route decorators;
+- `__main__` guards;
+- declared Python `module:function` entry points;
+- package scripts and workflow commands that invoke them.
 
-Keep low-friction safety guardrails:
+Do not infer dynamic imports, reflection, dependency injection, runtime routes, generated code, JavaScript call graphs, or network behavior.
 
-* do not use workflow-level `write-all` permissions;
-* use only required permissions;
-* avoid printing secrets or sensitive values to logs;
-* avoid `pull_request_target` unless there is a clear documented reason;
-* keep workflow/job names stable if they may become required checks;
-* prefer trusted official/common actions unless repository evidence says otherwise.
+## Profile rules
 
-## GitHub Connector Implementation Rules
+Every profile match must preserve matched criteria and references. Confidence must reflect independent and authoritative signals.
 
-Before owner approval:
+Expected and excluded capability contributions must be retained separately. If both occur, emit a conflict diagnostic and withhold the capability from baseline recommendations until a versioned rule resolves it.
 
-* read-only analysis only;
-* do not create branches;
-* do not commit files;
-* do not open PRs;
-* do not modify workflows;
-* do not claim enforcement.
+## Ranking
 
-After explicit owner approval:
+Use `profiles/ranking-policy.v1.json`. Each factor is an integer from `0` through `3`. Preserve:
 
-* create a dedicated branch;
-* apply the smallest useful patch;
-* commit only related files;
-* open or update a PR if appropriate;
-* verify workflow results on the exact head SHA when possible;
-* report evidence honestly.
+- ranking-policy version;
+- current capability state;
+- evidence confidence and reference count;
+- factor values;
+- factor-level rationale;
+- deterministic tie-breakers.
 
-Never modify `main` directly unless the owner explicitly asks for direct main edits and the repository is in bootstrap state.
+The total is an ordering aid, not probability or calibrated monetary risk. Do not optimize primarily for patch size or use fractional pseudo-precision.
 
-For bootstrap of this repository itself, direct `main` updates are acceptable only when the owner explicitly asks to create foundational files in the empty repository.
+## Implementation engine boundary
 
-## GitHub Actions Evidence Model
+Analysis is read-only by default. A dry-run implementation package does not authorize mutation.
 
-For future implementation, deterministic evidence should be produced by a workflow runner.
+Mutation requires all of:
 
-Preferred report channels:
+- explicit `deep-repository-upgrade` mode;
+- `--apply-phase-1`;
+- exact current HEAD supplied through `--expected-head-sha`;
+- clean Git worktree;
+- explicit `--allow-recipe` entries;
+- applicable versioned recipe preconditions;
+- absent non-symlink target path;
+- content-hash verification;
+- output/report paths outside the target repository.
 
-```text
-raw JSON evidence      → workflow artifact
-human-readable summary → GITHUB_STEP_SUMMARY
-final decision summary → PR body or PR comment
-optional latest.json   → rolling overwrite only, never timestamp spam
-```
+Current mutation supports non-overwriting atomic file creation only. Never execute repository commands in the generic implementation engine; repository code is untrusted input. Return validation commands for an explicitly trusted environment.
 
-Do not commit raw generated evidence reports by default.
+## Outcome-driven profile evolution
 
-## Bilingual Mining Policy
+No hidden online learning or mutable memory is allowed.
 
-Historical evidence mining must support English and Persian keywords.
+Only exact-head successful outcomes from distinct privacy-preserving repository fingerprints may produce review-only proposals. Proposals must never update profile, ranking, or recipe registries automatically. Registry changes require a separate versioned PR, schemas, fixtures, tests, and migration notes.
 
-English keywords:
+## Telemetry
 
-```text
-fix, bug, revert, regression, hotfix, broken, fail, failure, repair, patch
-```
+Remote telemetry is optional and read-only. Missing token, permission, response shape, jobs, or logs must produce explicit unavailable evidence. Do not fabricate flakiness, branch coverage, durations, or failing steps.
 
-Persian keywords:
+## Determinism
 
-```text
-رفع، اصلاح، باگ، خرابی، خراب، شکست، ناموفق، بازگشت، برگشت، رگرسیون، تعمیر، پچ
-```
+Required:
 
-Remote GitHub search in Persian is best-effort until calibrated.
-Do not claim complete Persian historical coverage without evidence.
+- sorted unordered collections;
+- stable JSON key order;
+- versioned canonicalization;
+- UTF-8 and timezone-explicit behavior;
+- SHA-256 over canonical content;
+- rejection of NaN and infinities;
+- deterministic tie-breakers;
+- bounded file, Git-history, and API collection;
+- no hidden mutable global state.
 
-## Cross-Repo Evidence Policy
+## Repository safety
 
-If a target repository appears to be part of a multi-repository ecosystem, the agent must check whether connector access includes sibling repositories.
+Never:
 
-Record access as:
+- write directly to `main`;
+- merge or enable auto-merge;
+- publish packages or trigger releases;
+- alter secrets;
+- expose credentials;
+- delete branches;
+- claim CI success before exact-head evidence exists.
 
-```yaml
-connector_scope:
-  target_repo: read|write|unknown
-  workflows: read|write|unknown
-  actions_runs: read|unknown
-  sibling_repos:
-    - repo: owner/name
-      access: read|write|unauthorized|unknown
-```
+Use coherent commits and keep unrelated changes out of scope.
 
-If sibling repositories are not authorized, state that cross-repo evidence is incomplete and continue with available evidence unless access is necessary for correctness.
+## Validation
 
-## Gate Meaningfulness Test
+Before finalizing:
 
-Before recommending or implementing a gate, answer:
+1. run targeted unit and malformed-input tests;
+2. run `python -m unittest discover -s tests`;
+3. validate all schemas and registries;
+4. generate both mode reports at a fixed timestamp;
+5. verify canonical hashes;
+6. test implementation dry-run and exact-HEAD guards in temporary Git fixtures;
+7. test outcome thresholds and no-auto-mutation behavior;
+8. inspect exact exit codes;
+9. inspect GitHub Actions on the exact PR head SHA.
 
-1. What exact real or structural failure does this gate catch?
-2. What evidence justifies it in this repository?
-3. Is there already a script, validator, or test that should be wired into CI?
-4. If it fails, will the maintainer immediately know what to fix?
-5. Should it run on PR, push, release, manual trigger, or scheduled run?
-6. Is runtime cost proportional to signal value?
-7. Could it be noisy or flaky?
-8. Does it actually enforce something, or only document it?
+Fixture success is not production proof. State verification scope precisely.
 
-If the answer is unclear, reject the gate or mark it low-priority.
+## Diagnostics
 
-## Required Report Style
+Important failures must identify what failed, where, the affected invariant or capability, evidence references, why it matters, and a repair or next diagnostic step. Avoid bare messages such as `validation failed`.
 
-User-facing reports must be in Persian.
+## Documentation and traceability
 
-They must be:
+Keep README, architecture, tracker, protocols, prompts, schemas, registries, fixtures, tests, workflow commands, changelog, and version metadata aligned. Do not mark a tracker item `verified` without executed evidence.
 
-* short;
-* practical;
-* non-technical where possible;
-* clear about decisions made by the model;
-* honest about missing evidence;
-* supported by exact file paths, branch names, commit SHAs, or workflow run evidence when applicable.
+## User-facing reports
 
-Use mental imagery when helpful.
-
-The owner should receive the conclusion, not the model's private reasoning.
-
-## Final Report Requirements
-
-After implementation, report:
-
-1. خلاصه خیلی کوتاه؛
-2. CI Gate Map نهایی؛
-3. فایل‌های دقیق تغییر یافته؛
-4. هر gate چه خرابی واقعی‌ای را می‌گیرد؛
-5. چه چیزهایی عمداً اضافه نشد و چرا؛
-6. شواهد اجرا و وضعیت GitHub Actions روی head SHA؛
-7. ریسک‌های باقی‌مانده؛
-8. توصیه نهایی: ready for review، draft، یا needs more work.
-
-## Current Bootstrap Instructions
-
-This repository is currently in bootstrap stage.
-
-When adding foundational files, keep them clear and modular.
-
-Preferred near-term structure:
-
-```text
-README.md
-AGENTS.md
-pipeline/
-  00-overview.md
-  01-target-intake.md
-  02-static-inventory.md
-  06-implementation-protocol.md
-prompts/
-  00-start.md
-  01-audit-only.md
-  02-implementation-after-approval.md
-schemas/
-  ci_detective_report.schema.json
-  ci_gate_map.schema.json
-tools/
-  ci_detective.py
-examples/
-  ci_gate_map.example.yaml
-```
-
-Do not create complex tooling before the protocol and schemas are stable.
-
-Recommended build order:
-
-1. master README;
-2. AGENTS.md;
-3. pipeline protocol files;
-4. schemas;
-5. prompt files;
-6. examples;
-7. `ci_detective.py`;
-8. reusable workflow;
-9. composite action, if later justified.
+Write owner-facing implementation reports in Persian. Preserve technical identifiers, paths, commands, schema names, branch names, SHAs, and code symbols. Do not expose private chain-of-thought; provide conclusions, evidence, decisions, limitations, and the next safe action.
