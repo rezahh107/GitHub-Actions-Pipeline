@@ -107,13 +107,13 @@ class ScheduleSemanticEvidenceBoundaryTests(unittest.TestCase):
 
     def test_valid_five_minute_or_slower_schedules_remain_evidentiary(self):
         source = workflow(
-            "    - cron: '*/5 * * * *'\n"
+            "    - cron: '0 0 * JAN MON'\n"
+            "      timezone: UTC\n"
+            "    - cron: '5 0 * JAN MON'\n"
             "      timezone: UTC\n"
             "    - cron: '30 5 * * 1-5'\n"
             "      timezone: UTC\n"
-            "    - cron: '0 0 * JAN MON'\n"
-            "      timezone: UTC\n"
-            "    - cron: '55,0 23,0 * * MON'\n"
+            "    - cron: '55 23 * * SUN'\n"
             "      timezone: UTC\n"
         )
         model = self.model(source)
