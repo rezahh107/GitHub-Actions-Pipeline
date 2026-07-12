@@ -171,7 +171,11 @@ class CompleteOccurrenceOverlapTests(unittest.TestCase):
             )
             observed.append((workflow_ledger.used, repository_ledger.used))
         self.assertEqual(observed[0], observed[1])
-        expected = 2 * occurrence.OCCURRENCE_IDENTITY_WORK_UNITS + 3
+        expected = (
+            len(schedules[0].times)
+            + 2 * occurrence.OCCURRENCE_IDENTITY_WORK_UNITS
+            + 1
+        )
         self.assertEqual(observed[0], (expected, expected))
 
     def test_overlap_workflow_and_repository_budgets_are_deterministic(self):
