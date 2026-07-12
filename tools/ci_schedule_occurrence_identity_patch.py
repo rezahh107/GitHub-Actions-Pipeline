@@ -1,26 +1,26 @@
-"""Harden duplicate schedule detection with complete-cycle occurrence identity."""
+"""Harden schedule overlap detection with complete-cycle occurrence masks."""
 from __future__ import annotations
 
 from tools import ci_schedule_resource_patch as _resource
 from tools import ci_schedule_semantics as _semantics
 from tools.ci_calendar_bitsets import matching_dates
 
-CONTRACT_VERSION = "1.5.0"
+CONTRACT_VERSION = "1.6.0"
 OCCURRENCE_IDENTITY_WORK_UNITS = 1
 
 
-def _complete_occurrence_identity(
+def _complete_occurrence_date_mask(
     item: _resource._CanonicalSchedule,
     workflow: _resource._Ledger,
     repository: _resource._Ledger,
-) -> tuple[str, tuple[int, ...], int]:
-    """Return exact represented occurrence identity over one Gregorian cycle."""
+) -> int:
+    """Compute one complete Gregorian-cycle date mask for a schedule entry."""
     for ledger in (workflow, repository):
         ledger.charge(
             OCCURRENCE_IDENTITY_WORK_UNITS,
-            "constructing a complete-cycle schedule occurrence identity",
+            "constructing a complete-cycle schedule occurrence mask",
         )
-    return (item.timezone, item.times, matching_dates(item.predicate))
+    return matching_dates(item.predicate)
 
 
 def _require_distinct_schedule_events(
@@ -28,27 +28,33 @@ def _require_distinct_schedule_events(
     workflow: _resource._Ledger,
     repository: _resource._Ledger,
 ) -> None:
-    """Reject schedules with identical timezone, minute set, and active dates."""
-    seen: set[tuple[str, tuple[int, ...], int]] = set()
+    """Reject any entries whose represented local occurrences intersect."""
+    accumulated_masks: dict[int, int] = {}
     for item in schedules:
-        identity = _complete_occurrence_identity(item, workflow, repository)
-        for ledger in (workflow, repository):
-            ledger.charge(
-                1,
-                "comparing a complete-cycle schedule occurrence identity",
-            )
-        if identity in seen:
-            raise _semantics.ScheduleSemanticError(
-                "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
-                "Multiple schedule entries resolve to the same complete occurrence "
-                "semantics, but GitHub Actions duplicate-event delivery semantics "
-                "are not represented.",
-            )
-        seen.add(identity)
+        date_mask = _complete_occurrence_date_mask(item, workflow, repository)
+
+        # Charge and complete every overlap check before mutating accumulated state.
+        # This keeps rejection deterministic and prevents a partially added entry.
+        for minute in item.times:
+            for ledger in (workflow, repository):
+                ledger.charge(
+                    1,
+                    "checking a complete-cycle local-minute occurrence overlap",
+                )
+            if accumulated_masks.get(minute, 0) & date_mask:
+                raise _semantics.ScheduleSemanticError(
+                    "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+                    "Multiple schedule entries overlap at the same represented local "
+                    "minute and active date, but GitHub Actions simultaneous-event "
+                    "delivery multiplicity is not represented.",
+                )
+
+        for minute in item.times:
+            accumulated_masks[minute] = accumulated_masks.get(minute, 0) | date_mask
 
 
 def install_schedule_occurrence_identity_hardening() -> None:
-    """Install complete occurrence identity after resource hardening."""
+    """Install complete occurrence-overlap rejection after resource hardening."""
     if (
         getattr(_resource, "__schedule_occurrence_identity_contract__", None)
         == CONTRACT_VERSION
