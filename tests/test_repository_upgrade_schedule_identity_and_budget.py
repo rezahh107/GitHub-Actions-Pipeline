@@ -161,7 +161,7 @@ class CumulativeScheduleBudgetTests(unittest.TestCase):
                 ".github/workflows/a.yml": workflow(first),
                 ".github/workflows/b.yml": workflow(second),
             })
-            with patch.object(resource, "REPOSITORY_LIMIT", 300):
+            with patch.object(resource, "REPOSITORY_LIMIT", 350):
                 model = build_repository_model(root)
         workflows = {item["path"]: item for item in model["workflows"]}
         self.assertEqual(workflows[".github/workflows/a.yml"]["parse_status"], "parsed")
