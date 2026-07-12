@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools import ci_calendar_bitsets as calendar
 from tools import ci_pinned_timezone as pinned
@@ -34,14 +35,14 @@ def workflow(entries: list[tuple[str, str | None]]) -> str:
         if timezone is not None:
             schedule.append(f"      timezone: {timezone}\n")
     return (
-        "name: occurrence identity fixture\non:\n  pull_request:\n  schedule:\n"
+        "name: occurrence overlap fixture\non:\n  pull_request:\n  schedule:\n"
         + "".join(schedule)
         + "permissions: {}\njobs:\n  test:\n    runs-on: ubuntu-latest\n"
           "    steps:\n      - run: python -m unittest discover -s tests\n"
     )
 
 
-class CompleteOccurrenceIdentityTests(unittest.TestCase):
+class CompleteOccurrenceOverlapTests(unittest.TestCase):
     def setUp(self) -> None:
         calendar.calendar_masks.cache_clear()
         calendar.matching_dates.cache_clear()
@@ -82,6 +83,32 @@ class CompleteOccurrenceIdentityTests(unittest.TestCase):
         )
         self.assertIn(code, {item["code"] for item in model["unresolved_evidence"]})
 
+    def assert_operational(self, entries: list[tuple[str, str | None]]) -> None:
+        model = self.model(entries)
+        self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
+        self.assertEqual(
+            capability(model, "tests_run_on_pull_requests")["state"],
+            "operational",
+        )
+
+    def test_partial_minute_overlap_fails_closed(self):
+        self.assert_invalid(
+            [("0,5 * * * *", "UTC"), ("5,10 * * * *", "UTC")],
+            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+        )
+
+    def test_partial_date_overlap_fails_closed(self):
+        self.assert_invalid(
+            [("0 0 * * *", "UTC"), ("0 0 1-30 * *", "UTC")],
+            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+        )
+
+    def test_exact_complete_duplicate_fails_closed(self):
+        self.assert_invalid(
+            [("0 0 * * *", "UTC"), ("0 0 * * *", "UTC")],
+            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+        )
+
     def test_full_domain_day_of_month_alias_fails_closed(self):
         self.assert_invalid(
             [("0 0 * * *", "UTC"), ("0 0 1-31 * *", "UTC")],
@@ -94,32 +121,38 @@ class CompleteOccurrenceIdentityTests(unittest.TestCase):
             "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
         )
 
-    def test_duplicate_rejection_precedes_transition_proof(self):
-        self.assert_invalid(
-            [
-                ("0,5 * * * *", "America/New_York"),
-                ("0,5 * 1-31 * *", "America/New_York"),
-            ],
-            "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+    def test_same_minute_on_disjoint_date_masks_remains_operational(self):
+        self.assert_operational(
+            [("0 0 1 * *", "UTC"), ("0 0 2 * *", "UTC")]
         )
 
-    def test_semantically_distinct_date_predicate_remains_operational(self):
-        model = self.model(
-            [("0 0 * * *", "UTC"), ("0 0 1-30 * *", "UTC")]
-        )
-        self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
-        self.assertEqual(
-            capability(model, "tests_run_on_pull_requests")["state"],
-            "operational",
+    def test_disjoint_minutes_exactly_five_minutes_apart_remain_operational(self):
+        self.assert_operational(
+            [("0 * * * *", "UTC"), ("5 * * * *", "UTC")]
         )
 
-    def test_occurrence_identity_charging_is_cache_warmth_independent(self):
+    def test_transition_zone_overlap_rejection_precedes_tzif_proof(self):
+        with patch.object(
+            resource,
+            "_require_fixed_offset_aggregate_timezone",
+            side_effect=AssertionError("TZif proof must not run before overlap rejection"),
+        ) as transition_proof:
+            self.assert_invalid(
+                [
+                    ("0,5 * * * *", "America/New_York"),
+                    ("5,10 * * * *", "America/New_York"),
+                ],
+                "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+            )
+        transition_proof.assert_not_called()
+
+    def test_overlap_charging_is_cache_warmth_independent(self):
         schedules = [
             resource._canonical_schedule(
-                semantics.parse_cron_expression("0 0 * * *"), "UTC"
+                semantics.parse_cron_expression("0,5 * * * *"), "UTC"
             ),
             resource._canonical_schedule(
-                semantics.parse_cron_expression("0 0 1-31 * *"), "UTC"
+                semantics.parse_cron_expression("5,10 * * * *"), "UTC"
             ),
         ]
         observed: list[tuple[int, int]] = []
@@ -138,10 +171,10 @@ class CompleteOccurrenceIdentityTests(unittest.TestCase):
             )
             observed.append((workflow_ledger.used, repository_ledger.used))
         self.assertEqual(observed[0], observed[1])
-        expected = 2 * (occurrence.OCCURRENCE_IDENTITY_WORK_UNITS + 1)
+        expected = 2 * occurrence.OCCURRENCE_IDENTITY_WORK_UNITS + 3
         self.assertEqual(observed[0], (expected, expected))
 
-    def test_occurrence_identity_workflow_and_repository_budgets_are_deterministic(self):
+    def test_overlap_workflow_and_repository_budgets_are_deterministic(self):
         schedules = [
             resource._canonical_schedule(
                 semantics.parse_cron_expression(f"0 0 {day} JAN *"), "UTC"
