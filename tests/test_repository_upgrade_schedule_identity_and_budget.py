@@ -209,11 +209,12 @@ class ResourceBoundaryIntegrationTests(unittest.TestCase):
         controls = (
             ("*/5 * * * *", "Etc/UTC"),
             ("0 * * * *", "UTC"),
-            (WORST_CASE, "America/New_York"),
+            (WORST_CASE, "Etc/UTC"),
+            ("30 2 * * *", "America/New_York"),
             ("30 5 * * MON", "Asia/Baku"),
         )
         for cron, timezone in controls:
-            with self.subTest(timezone=timezone):
+            with self.subTest(timezone=timezone, cron=cron):
                 model = self.model([(cron, timezone)])
                 self.assertEqual(model["workflows"][0]["parse_status"], "parsed")
                 self.assertEqual(
