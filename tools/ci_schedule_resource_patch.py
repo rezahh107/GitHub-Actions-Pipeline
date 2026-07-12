@@ -21,7 +21,7 @@ from tools.ci_pinned_timezone import (
     validate_pinned_timezone,
 )
 
-CONTRACT_VERSION = "1.2.0"
+CONTRACT_VERSION = "1.3.0"
 WORKFLOW_LIMIT = 4096
 REPOSITORY_LIMIT = 8192
 TRANSITION_PROOF_WORK_UNITS = 64
@@ -141,11 +141,13 @@ def _aggregate_interval(schedules: list[_CanonicalSchedule], workflow: _Ledger, 
             f"observed {timezones!r}.",
         )
 
-    # A single entry remains valid in any pinned IANA timezone because no aggregate
-    # comparison is required. Every multi-entry set, including semantic duplicates,
-    # must prove that its exact pinned TZif bytes are transition-free before local
-    # minute masks can safely represent an absolute timeline.
-    if len(schedules) > 1:
+    # A schedule set with one distinct local minute remains valid in any pinned
+    # IANA timezone because no cross-time comparison is required. Whenever the
+    # expanded cron semantics represent multiple local minutes, including from
+    # one YAML entry, the exact pinned TZif bytes must prove transition-free
+    # behavior before local minute masks can stand in for an absolute timeline.
+    local_times = {minute for item in schedules for minute in item.times}
+    if len(local_times) > 1:
         _require_fixed_offset_aggregate_timezone(timezones[0], workflow, repository)
 
     unique = sorted(
