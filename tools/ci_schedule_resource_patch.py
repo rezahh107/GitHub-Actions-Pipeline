@@ -21,7 +21,7 @@ from tools.ci_pinned_timezone import (
     validate_pinned_timezone,
 )
 
-CONTRACT_VERSION = "1.3.0"
+CONTRACT_VERSION = "1.4.0"
 WORKFLOW_LIMIT = 4096
 REPOSITORY_LIMIT = 8192
 TRANSITION_PROOF_WORK_UNITS = 64
@@ -129,6 +129,24 @@ def _require_fixed_offset_aggregate_timezone(
     validate_fixed_offset_timezone(timezone)
 
 
+def _require_distinct_schedule_events(
+    schedules: list[_CanonicalSchedule],
+    workflow: _Ledger,
+    repository: _Ledger,
+) -> None:
+    seen: set[_CanonicalSchedule] = set()
+    for item in schedules:
+        for ledger in (workflow, repository):
+            ledger.charge(1, "checking a canonical schedule event for duplicates")
+        if item in seen:
+            raise _semantics.ScheduleSemanticError(
+                "WORKFLOW_SCHEDULE_DUPLICATE_EVENT_UNSUPPORTED",
+                "Multiple schedule entries resolve to the same canonical event, but "
+                "GitHub Actions duplicate-event delivery semantics are not represented.",
+            )
+        seen.add(item)
+
+
 def _aggregate_interval(schedules: list[_CanonicalSchedule], workflow: _Ledger, repository: _Ledger) -> int | None:
     """Return the minimum sub-five-minute gap over the union of all schedules."""
     if not schedules:
@@ -141,6 +159,11 @@ def _aggregate_interval(schedules: list[_CanonicalSchedule], workflow: _Ledger, 
             f"observed {timezones!r}.",
         )
 
+    # Every YAML schedule entry remains a distinct represented trigger. Canonical
+    # duplicates fail closed because service-side duplicate-event delivery or
+    # deduplication has not been established by authoritative evidence.
+    _require_distinct_schedule_events(schedules, workflow, repository)
+
     # A schedule set with one distinct local minute remains valid in any pinned
     # IANA timezone because no cross-time comparison is required. Whenever the
     # expanded cron semantics represent multiple local minutes, including from
@@ -150,12 +173,12 @@ def _aggregate_interval(schedules: list[_CanonicalSchedule], workflow: _Ledger, 
     if len(local_times) > 1:
         _require_fixed_offset_aggregate_timezone(timezones[0], workflow, repository)
 
-    unique = sorted(
-        set(schedules),
+    ordered = sorted(
+        schedules,
         key=lambda item: (item.timezone, item.times, item.predicate),
     )
     occurrence_masks: dict[int, int] = {}
-    for item in unique:
+    for item in ordered:
         for ledger in (workflow, repository):
             ledger.charge(
                 predicate_work_units(item.predicate),
@@ -164,7 +187,7 @@ def _aggregate_interval(schedules: list[_CanonicalSchedule], workflow: _Ledger, 
             )
             ledger.charge(
                 len(item.times),
-                "projecting a distinct schedule into aggregate occurrence times",
+                "projecting a canonical schedule event into aggregate occurrence times",
                 ("aggregate-schedule", item.timezone, item.times, item.predicate),
             )
         date_mask = matching_dates(item.predicate)
