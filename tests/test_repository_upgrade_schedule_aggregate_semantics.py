@@ -122,6 +122,12 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
             "WORKFLOW_SCHEDULE_TIMEZONE_TRANSITIONS_UNSUPPORTED",
         )
 
+    def test_single_entry_expanding_to_multiple_local_times_requires_transition_proof(self):
+        self.assert_invalid(
+            [("4,30 2,3 * * *", "America/New_York")],
+            "WORKFLOW_SCHEDULE_TIMEZONE_TRANSITIONS_UNSUPPORTED",
+        )
+
     def test_fall_back_repeated_hour_is_explicitly_unsupported_for_multi_entry_sets(self):
         self.assert_invalid(
             [
@@ -161,7 +167,7 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
         ):
             pinned.pinned_fixed_offset_state.cache_clear()
             self.assert_invalid(
-                [("0 * * * *", "UTC"), ("5 * * * *", "UTC")],
+                [("0,5 * * * *", "UTC")],
                 "WORKFLOW_SCHEDULE_TIMEZONE_TRANSITION_UNVERIFIABLE",
             )
 
@@ -176,14 +182,13 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
             side_effect=OSError("transition file unavailable"),
         ):
             self.assert_invalid(
-                [("0 * * * *", "UTC"), ("5 * * * *", "UTC")],
+                [("0,5 * * * *", "UTC")],
                 "WORKFLOW_SCHEDULE_TIMEZONE_TRANSITION_UNVERIFIABLE",
             )
 
     def test_transition_charging_is_independent_of_cache_warmth(self):
         schedules = [
-            resource._canonical_schedule(semantics.parse_cron_expression("0 * * * *"), "UTC"),
-            resource._canonical_schedule(semantics.parse_cron_expression("5 * * * *"), "UTC"),
+            resource._canonical_schedule(semantics.parse_cron_expression("0,5 * * * *"), "UTC"),
         ]
         observed: list[tuple[int, int]] = []
         for _ in range(2):
@@ -199,7 +204,7 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
     def test_transition_proof_workflow_budget_exhaustion_fails_closed(self):
         with patch.object(resource, "WORKFLOW_LIMIT", 80):
             self.assert_invalid(
-                [("0 * * * *", "UTC"), ("5 * * * *", "UTC")],
+                [("0,5 * * * *", "UTC")],
                 "WORKFLOW_SCHEDULE_SEMANTIC_WORK_LIMIT_EXCEEDED",
             )
 
@@ -211,12 +216,10 @@ class AggregateScheduleEvidenceBoundaryTests(unittest.TestCase):
                 {
                     "tests/test_x.py": "import unittest\n",
                     ".github/workflows/a.yml": workflow([
-                        ("0 * 1 JAN *", "UTC"),
-                        ("5 * 1 JAN *", "UTC"),
+                        ("0,5 * 1 JAN *", "UTC"),
                     ]),
                     ".github/workflows/b.yml": workflow([
-                        ("0 * 2 FEB *", "Etc/GMT+5"),
-                        ("5 * 2 FEB *", "Etc/GMT+5"),
+                        ("0,5 * 2 FEB *", "Etc/GMT+5"),
                     ]),
                 },
             )
